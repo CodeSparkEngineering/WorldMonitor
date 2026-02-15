@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Successful - GeoNexus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f140f 0%, #1a1f1a 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .success-container {
+            max-width: 600px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 16px;
+            padding: 60px 40px;
+        }
+
+        .success-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #4caf50;
+            margin-bottom: 16px;
+        }
+
+        p {
+            font-size: 18px;
+            color: #ccc;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 16px 40px;
+            background: #4caf50;
+            color: #000;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .button:hover {
+            background: #66bb6a;
+            transform: translateY(-2px);
+        }
+
+        .details {
+            margin-top: 40px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+            color: #888;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(76, 175, 80, 0.3);
+            border-top-color: #4caf50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="success-container">
+        <div class="success-icon">✓</div>
+        <h1>Welcome to GeoNexus!</h1>
+        <p>
+            Your subscription is now active. You have full access to all features including
+            real-time intelligence, AI summaries, and advanced analytics.
+        </p>
+        <a href="/" class="button" id="continueBtn">
+            Continue to Dashboard <span class="loading" id="loading"></span>
+        </a>
+        <div class="details">
+            <p>
+                A confirmation email has been sent to your inbox.<br>
+                You can manage your subscription anytime from your account settings.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Get session ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+
+        if (sessionId) {
+            // Store session info (in production, verify with backend)
+            const user = {
+                subscriptionStatus: 'active',
+                subscriptionId: sessionId,
+                email: 'user@example.com' // Would come from Stripe session
+            };
+            localStorage.setItem('geonexus_user', JSON.stringify(user));
+
+            // Auto-redirect after 3 seconds
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 3000);
+        } else {
+            // No session ID, redirect immediately
+            window.location.href = '/';
+        }
+    </script>
+</body>
+
+</html>
