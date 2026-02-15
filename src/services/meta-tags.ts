@@ -17,7 +17,7 @@ export function updateMetaTagsForStory(meta: StoryMeta): void {
   const { countryCode, countryName, ciiScore, ciiLevel, trend, type } = meta;
 
   // Generate dynamic content
-  const title = `${countryName} Intelligence Brief | Vantage`;
+  const title = `${countryName} Intelligence Brief | GeoNexus`;
   const description = generateDescription(ciiScore, ciiLevel, trend, type, countryName);
   const storyUrl = `${BASE_URL}/api/story?c=${countryCode}&t=${type}`;
   let imageUrl = `${BASE_URL}/api/og-story?c=${countryCode}&t=${type}`;
@@ -48,7 +48,7 @@ export function updateMetaTagsForStory(meta: StoryMeta): void {
 }
 
 export function resetMetaTags(): void {
-  const defaultTitle = 'Vantage - Global Situation with AI Insights';
+  const defaultTitle = 'GeoNexus - Global Situation with AI Insights';
   const defaultDesc = 'AI-powered real-time global intelligence dashboard with live news, markets, military tracking, and geopolitical data.';
 
   setMetaTag('title', defaultTitle);
@@ -96,7 +96,7 @@ function generateDescription(
     parts.push(typeDescriptions[type]);
   }
 
-  return `Vantage ${parts.join('. ')}. Free, open-source geopolitical intelligence.`;
+  return `GeoNexus ${parts.join('. ')}. Free, open-source geopolitical intelligence.`;
 }
 
 function setMetaTag(property: string, content: string): void {
