@@ -1,4 +1,4 @@
-# World Monitor
+# Vantage
 
 **Real-time global intelligence dashboard** — AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking in a unified situational awareness interface.
 
@@ -19,7 +19,7 @@
 
 ---
 
-## Why World Monitor?
+## Why Vantage?
 
 | Problem | Solution |
 |---------|----------|
