@@ -206,13 +206,15 @@ export async function fetchInternetOutages(): Promise<InternetOutage[]> {
 
     if (data.configured === false) {
       outagesConfigured = false;
-      throw new Error('Outages API not configured');
+      console.warn('[Outages] Cloudflare API not configured (missing token)');
+      return [];
     }
 
     outagesConfigured = true;
 
     if (!data.success || data.errors?.length) {
-      throw new Error(data.errors?.[0]?.message || 'API error');
+      console.warn('[Outages] Cloudflare API error:', data.errors?.[0]?.message);
+      return [];
     }
 
     const outages: InternetOutage[] = [];

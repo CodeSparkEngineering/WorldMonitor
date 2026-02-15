@@ -71,7 +71,14 @@ export default async function handler(req) {
 
     if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`);
 
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.warn('[Stablecoins] Invalid JSON from CoinGecko:', text.slice(0, 100));
+      throw new Error('Invalid JSON response');
+    }
 
     const stablecoins = data.map(coin => {
       const price = coin.current_price || 0;

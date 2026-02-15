@@ -26,7 +26,13 @@ async function fetchChart(ticker) {
   try {
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) return null;
-    return await res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      console.warn('[ETFFlows] Invalid JSON from Yahoo:', text.slice(0, 100));
+      return null;
+    }
   } catch {
     return null;
   } finally {

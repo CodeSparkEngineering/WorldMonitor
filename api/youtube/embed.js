@@ -26,7 +26,7 @@ export default async function handler(request) {
 
   const origin = url.searchParams.get('origin') || 'https://worldmonitor.app';
 
-  const embedSrc = new URL(`https://www.youtube-nocookie.com/embed/${videoId}`);
+  const embedSrc = new URL(`https://www.youtube.com/embed/${videoId}`);
   embedSrc.searchParams.set('autoplay', autoplay);
   embedSrc.searchParams.set('mute', mute);
   embedSrc.searchParams.set('playsinline', '1');

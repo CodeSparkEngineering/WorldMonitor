@@ -8,7 +8,7 @@ import { mlWorker } from './ml-worker';
 import { SITE_VARIANT } from '@/config';
 import { isFeatureAvailable } from './runtime-config';
 
-export type SummarizationProvider = 'groq' | 'openrouter' | 'browser' | 'cache';
+export type SummarizationProvider = 'groq' | 'grok' | 'openrouter' | 'browser' | 'cache';
 
 export interface SummarizationResult {
   summary: string;
@@ -34,8 +34,8 @@ async function tryGroq(headlines: string[], geoContext?: string): Promise<Summar
     }
 
     const data = await response.json();
-    const provider = data.cached ? 'cache' : 'groq';
-    console.log(`[Summarization] ${provider === 'cache' ? 'Redis cache hit' : 'Groq success'}:`, data.model);
+    const provider = data.cached ? 'cache' : (data.provider || 'groq');
+    console.log(`[Summarization] ${provider === 'cache' ? 'Redis cache hit' : (provider === 'grok' ? 'xAI Grok success' : 'Groq success')}:`, data.model);
     return {
       summary: data.summary,
       provider: provider as SummarizationProvider,

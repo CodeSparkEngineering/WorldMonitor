@@ -12,7 +12,14 @@ async function fetchJSON(url, timeout = 8000) {
   try {
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.warn(`[MacroSignals] JSON parse error for ${url}:`, e.message, 'Response preview:', text.slice(0, 100));
+      throw new Error(`Invalid JSON: ${text.slice(0, 20)}...`);
+    }
   } finally {
     clearTimeout(id);
   }

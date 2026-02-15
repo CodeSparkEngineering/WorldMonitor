@@ -115,7 +115,23 @@ export default async function handler(request) {
       });
     }
 
-    const data = await res.json();
+    const data = await (async () => {
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        console.warn('[StockIndex] Invalid JSON from Yahoo:', text.slice(0, 100));
+        return null;
+      }
+    })();
+
+    if (!data) {
+      return new Response(JSON.stringify({ error: 'Invalid upstream response', available: false }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600' },
+      });
+    }
+
     const result = data?.chart?.result?.[0];
     if (!result) {
       return new Response(JSON.stringify({ error: 'No data', available: false }), {

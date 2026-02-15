@@ -2,12 +2,12 @@
 
 **Real-time global intelligence dashboard** — AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking in a unified situational awareness interface.
 
-[![GitHub stars](https://img.shields.io/github/stars/koala73/worldmonitor?style=social)](https://github.com/koala73/worldmonitor/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/koala73/worldmonitor?style=social)](https://github.com/koala73/worldmonitor/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/CodeSparkEngineering/worldmonitor?style=social)](https://github.com/CodeSparkEngineering/worldmonitor/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/CodeSparkEngineering/worldmonitor?style=social)](https://github.com/CodeSparkEngineering/worldmonitor/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Last commit](https://img.shields.io/github/last-commit/koala73/worldmonitor)](https://github.com/koala73/worldmonitor/commits/main)
-[![Latest release](https://img.shields.io/github/v/release/koala73/worldmonitor?style=flat)](https://github.com/koala73/worldmonitor/releases/latest)
+[![Last commit](https://img.shields.io/github/last-commit/CodeSparkEngineering/worldmonitor)](https://github.com/CodeSparkEngineering/worldmonitor/commits/main)
+[![Latest release](https://img.shields.io/github/v/release/CodeSparkEngineering/worldmonitor?style=flat)](https://github.com/CodeSparkEngineering/worldmonitor/releases/latest)
 
 <p align="center">
   <a href="https://worldmonitor.app"><strong>Live Demo</strong></a> &nbsp;·&nbsp;
@@ -657,7 +657,7 @@ The AI summarization pipeline adds content-based deduplication: headlines are ha
 
 ```bash
 # Clone and run
-git clone https://github.com/koala73/worldmonitor.git
+git clone https://github.com/CodeSparkEngineering/worldmonitor.git
 cd worldmonitor
 npm install
 vercel dev       # Runs frontend + all 45+ API edge functions

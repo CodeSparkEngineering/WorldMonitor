@@ -11,6 +11,33 @@
 
 const http = require('http');
 const zlib = require('zlib');
+
+// Simple .env loader for local development
+try {
+  const fs = require('fs');
+  const path = require('path');
+  const envPath = path.resolve(__dirname, '../.env');
+  if (fs.existsSync(envPath)) {
+    const data = fs.readFileSync(envPath, 'utf8');
+    data.split('\n').forEach(line => {
+      line = line.trim();
+      if (!line || line.startsWith('#')) return;
+      const idx = line.indexOf('=');
+      if (idx !== -1) {
+        const key = line.substring(0, idx).trim();
+        let val = line.substring(idx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (!process.env[key]) process.env[key] = val;
+      }
+    });
+    console.log('[Relay] Loaded .env configuration');
+  }
+} catch (e) {
+  // Ignore errors
+}
+
 const { WebSocketServer, WebSocket } = require('ws');
 
 const AISSTREAM_URL = 'wss://stream.aisstream.io/v0/stream';
@@ -915,7 +942,7 @@ const server = http.createServer(async (req, res) => {
 function connectUpstream() {
   // Skip if already connected or connecting
   if (upstreamSocket?.readyState === WebSocket.OPEN ||
-      upstreamSocket?.readyState === WebSocket.CONNECTING) return;
+    upstreamSocket?.readyState === WebSocket.CONNECTING) return;
 
   console.log('[Relay] Connecting to aisstream.io...');
   const socket = new WebSocket(AISSTREAM_URL);

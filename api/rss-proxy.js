@@ -210,17 +210,26 @@ export default async function handler(req) {
     const isGoogleNews = feedUrl.includes('news.google.com');
     const timeout = isGoogleNews ? 20000 : 12000;
 
+    // Use a modern, realistic User-Agent to avoid being blocked
+    const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
+
     const response = await fetchWithTimeout(feedUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': UA,
         'Accept': 'application/rss+xml, application/xml, text/xml, */*',
         'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
     }, timeout);
 
+    if (!response.ok) {
+      throw new Error(`Upstream ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.text();
     return new Response(data, {
-      status: response.status,
+      status: 200,
       headers: {
         'Content-Type': 'application/xml',
         'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
@@ -229,7 +238,11 @@ export default async function handler(req) {
     });
   } catch (error) {
     const isTimeout = error.name === 'AbortError';
-    console.error('RSS proxy error:', feedUrl, error.message);
+    // Only log if it's not a common timeout to reduce noise
+    if (!isTimeout) {
+      console.error(`[RSS Proxy] Error fetching ${feedUrl}:`, error.message);
+    }
+
     return new Response(JSON.stringify({
       error: isTimeout ? 'Feed timeout' : 'Failed to fetch feed',
       details: error.message,

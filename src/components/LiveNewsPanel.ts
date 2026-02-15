@@ -126,7 +126,7 @@ export class LiveNewsPanel extends Panel {
       } else if (msg.type === 'yt-error') {
         const code = Number(msg.code ?? 0);
         if (code === 153 && this.activeChannel.fallbackVideoId &&
-            this.activeChannel.videoId !== this.activeChannel.fallbackVideoId) {
+          this.activeChannel.videoId !== this.activeChannel.fallbackVideoId) {
           this.activeChannel.videoId = this.activeChannel.fallbackVideoId;
           this.renderDesktopEmbed(true);
         } else {
@@ -542,7 +542,7 @@ export class LiveNewsPanel extends Panel {
     if (this.player || !this.playerElement) return;
 
     this.player = new window.YT!.Player(this.playerElement, {
-      host: 'https://www.youtube-nocookie.com',
+      host: 'https://www.youtube.com',
       videoId: this.activeChannel.videoId,
       playerVars: {
         autoplay: this.isPlaying ? 1 : 0,
@@ -552,9 +552,9 @@ export class LiveNewsPanel extends Panel {
         enablejsapi: 1,
         ...(this.youtubeOrigin
           ? {
-              origin: this.youtubeOrigin,
-              widget_referrer: this.youtubeOrigin,
-            }
+            origin: this.youtubeOrigin,
+            widget_referrer: this.youtubeOrigin,
+          }
           : {}),
       },
       events: {

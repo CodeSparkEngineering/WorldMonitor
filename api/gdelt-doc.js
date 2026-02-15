@@ -34,7 +34,17 @@ export default async function handler(req) {
       throw new Error(`GDELT returned ${response.status}`);
     }
 
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.warn('[GDELT] Invalid JSON:', text.slice(0, 100));
+      return new Response(JSON.stringify({ articles: [], query }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
 
     const articles = (data.articles || []).map(article => ({
       title: article.title,

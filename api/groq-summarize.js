@@ -68,13 +68,20 @@ export default async function handler(request) {
     });
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.GROK_API_KEY || process.env.GROQ_API_KEY;
+  const isGrok = !!process.env.GROK_API_KEY;
+
   if (!apiKey) {
-    return new Response(JSON.stringify({ summary: null, fallback: true, skipped: true, reason: 'GROQ_API_KEY not configured' }), {
+    return new Response(JSON.stringify({ summary: null, fallback: true, skipped: true, reason: 'No AI API key configured' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   }
+
+  // Override config if using Grok (xAI)
+  const apiUrl = isGrok ? 'https://api.x.ai/v1/chat/completions' : GROQ_API_URL;
+  const model = isGrok ? 'grok-4-latest' : MODEL;
+
 
   try {
     const { headlines, mode = 'brief', geoContext = '', variant = 'full' } = await request.json();
@@ -173,7 +180,7 @@ Rules:
       userPrompt = `Key takeaway:\n${headlineText}${intelSection}`;
     }
 
-    const response = await fetch(GROQ_API_URL, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -222,14 +229,14 @@ Rules:
     // Store in cache
     await setCachedJson(cacheKey, {
       summary,
-      model: MODEL,
+      model,
       timestamp: Date.now(),
     }, CACHE_TTL_SECONDS);
 
     return new Response(JSON.stringify({
       summary,
-      model: MODEL,
-      provider: 'groq',
+      model,
+      provider: isGrok ? 'grok' : 'groq',
       cached: false,
       tokens: data.usage?.total_tokens || 0,
     }), {

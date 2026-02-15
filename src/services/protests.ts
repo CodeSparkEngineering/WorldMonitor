@@ -22,9 +22,9 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -281,10 +281,21 @@ export interface ProtestData {
 
 export async function fetchProtestEvents(): Promise<ProtestData> {
   // Fetch from both sources in parallel
-  const [acledEvents, gdeltEvents] = await Promise.all([
+  // Fetch from both sources in parallel
+  const [acledResult, gdeltResult] = await Promise.allSettled([
     fetchAcledEvents(),
     fetchGdeltEvents(),
   ]);
+
+  const acledEvents = acledResult.status === 'fulfilled' ? acledResult.value : [];
+  const gdeltEvents = gdeltResult.status === 'fulfilled' ? gdeltResult.value : [];
+
+  if (acledResult.status === 'rejected') {
+    console.warn('[Protests] ACLED fetch failed (likely missing key), proceeding with GDELT only:', acledResult.reason);
+  }
+  if (gdeltResult.status === 'rejected') {
+    console.warn('[Protests] GDELT fetch failed:', gdeltResult.reason);
+  }
 
   console.log(`[Protests] Fetched ${acledEvents.length} ACLED, ${gdeltEvents.length} GDELT events`);
 

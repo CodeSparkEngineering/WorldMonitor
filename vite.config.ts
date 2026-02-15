@@ -120,12 +120,103 @@ function youtubeLivePlugin(): Plugin {
   };
 }
 
+function localApiPlugin(): Plugin {
+  return {
+    name: 'local-api',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith('/api/')) return next();
+
+        if (res.headersSent) return next();
+
+        const url = new URL(req.url, 'http://localhost');
+        const pathname = url.pathname.replace(/^\/api\//, ''); // e.g. 'youtube/live', 'temporal-baseline'
+        const parts = pathname.split('/').filter(Boolean);
+
+        if (parts.length === 0) return next();
+
+        let mod;
+        let finalPath = '';
+
+        // Priority:
+        // 1. Exact match (e.g. api/youtube/live.js)
+        // 2. Index match (e.g. api/youtube/live/index.js)
+        // 3. Dynamic match walking up (e.g. api/youtube/[[...path]].js)
+
+        const potentialFiles = [
+          `/api/${pathname}.js`,
+          `/api/${pathname}/index.js`,
+        ];
+
+        // Add dynamic route catch-alls walking up the tree
+        let currentParts = [...parts];
+        // Start from parts length and go down to 0 (root)
+        // e.g. youtube/live -> 2 parts
+        // 1. api/youtube/live/[[...path]].js
+        // 2. api/youtube/[[...path]].js
+        // 3. api/[[...path]].js
+        for (let i = parts.length; i >= 0; i--) {
+          const p = parts.slice(0, i).join('/');
+          const suffix = p ? `/${p}` : '';
+          potentialFiles.push(`/api${suffix}/[[...path]].js`);
+        }
+
+        for (const tryPath of potentialFiles) {
+          try {
+            // ssrLoadModule throws if file not found
+            mod = await server.ssrLoadModule(tryPath);
+            if (mod) {
+              finalPath = tryPath;
+              break;
+            }
+          } catch (e: any) {
+            // Ignore load errors (file not found), try next
+          }
+        }
+
+        if (!mod || !mod.default) return next();
+
+        // Read body for POST/PUT/PATCH
+        let body: any = undefined;
+        if (['POST', 'PUT', 'PATCH'].includes(req.method || '')) {
+          const buffers = [];
+          for await (const chunk of req) {
+            buffers.push(chunk);
+          }
+          body = Buffer.concat(buffers);
+        }
+
+        const webReq = new Request(url.href, {
+          method: req.method,
+          headers: req.headers as any,
+          body: body
+        });
+
+        try {
+          const webRes: Response = await mod.default(webReq);
+
+          res.statusCode = webRes.status;
+          webRes.headers.forEach((v, k) => res.setHeader(k, v));
+
+          const arrayBuffer = await webRes.arrayBuffer();
+          res.end(Buffer.from(arrayBuffer));
+        } catch (err: any) {
+          console.error(`[Local API] Error executing ${pathname} (${finalPath}):`, err);
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   plugins: [
     htmlVariantPlugin(),
+    localApiPlugin(),
     youtubeLivePlugin(),
     VitePWA({
       registerType: 'autoUpdate',

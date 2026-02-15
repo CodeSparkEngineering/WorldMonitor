@@ -7,7 +7,6 @@ AI-powered real-time global intelligence dashboard aggregating news, markets, ge
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)
 ![D3.js](https://img.shields.io/badge/D3.js-F9A03C?style=flat&logo=d3.js&logoColor=white)
-![Version](https://img.shields.io/badge/version-2.1.4-blue)
 
 ![World Monitor Dashboard](../new-world-monitor.png)
 
@@ -3204,7 +3203,7 @@ const header = `World Monitor v${__APP_VERSION__}`;
 
 ```bash
 # Clone the repository
-git clone https://github.com/koala73/worldmonitor.git
+git clone https://github.com/CodeSparkEngineering/worldmonitor.git
 cd worldmonitor
 
 # Install dependencies

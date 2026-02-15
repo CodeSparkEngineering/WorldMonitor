@@ -27,6 +27,19 @@ app.init().catch(console.error);
   count: getCellCount,
 };
 
+// Force unregister service worker to clear stale cache
+// if ('serviceWorker' in navigator) {
+//   navigator.serviceWorker.getRegistrations().then(registrations => {
+//     for (const registration of registrations) {
+//       console.log('Unregistering Service Worker:', registration);
+//       registration.unregister();
+//     }
+//     if (registrations.length > 0) {
+//       window.location.reload();
+//     }
+//   });
+// }
+
 if (!('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window)) {
   import('virtual:pwa-register').then(({ registerSW }) => {
     registerSW({
@@ -34,7 +47,7 @@ if (!('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window)) {
         if (registration) {
           setInterval(async () => {
             if (!navigator.onLine) return;
-            try { await registration.update(); } catch {}
+            try { await registration.update(); } catch { }
           }, 60 * 60 * 1000);
         }
       },
