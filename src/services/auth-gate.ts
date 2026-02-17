@@ -1,45 +1,64 @@
-// Authentication Gate
-// Checks if user has valid subscription before allowing access
+import { auth } from '../lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
-export function checkAuthentication(): void {
-    // Skip auth check on subscribe/success pages
-    if (window.location.pathname.includes('/subscribe') || window.location.pathname.includes('/success')) {
+/**
+ * Waits for Firebase Auth to initialize and returns the current user.
+ */
+export function waitForAuth(): Promise<User | null> {
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe();
+            resolve(user);
+        });
+    });
+}
+
+export function isAuthenticated(): boolean {
+    return !!auth.currentUser;
+}
+
+export async function checkAuthentication(): Promise<void> {
+    const path = window.location.pathname;
+
+    // Skip auth check on specific bypass pages
+    if (path.includes('/success') || path.includes('/subscribe')) {
         return;
     }
 
+    const user = await waitForAuth();
+
+    if (!user) {
+        console.log('[Auth] No user found - redirecting to landing');
+        if (!path.includes('landing.html')) {
+            window.location.href = '/landing.html';
+        }
+        return;
+    }
+
+    // If logged in, check subscription
     try {
-        const stored = localStorage.getItem('geonexus_user');
-        if (!stored) {
-            // No user data - redirect to subscribe
-            console.log('[Auth] No user data found - redirecting to subscribe');
-            window.location.href = '/subscribe.html';
-            return;
-        }
+        const response = await fetch(`/api/check-subscription?uid=${user.uid}`);
+        const data = await response.json();
 
-        const user = JSON.parse(stored);
-
-        // Check if subscription is active
-        if (user.subscriptionStatus === 'active') {
-            console.log('[Auth] User has active subscription');
-            return;
-        }
-
-        // Check if trial is still valid
-        if (user.subscriptionStatus === 'trial' && user.trialEndsAt) {
-            if (Date.now() < user.trialEndsAt) {
-                const daysLeft = Math.ceil((user.trialEndsAt - Date.now()) / (24 * 60 * 60 * 1000));
-                console.log(`[Auth] User has ${daysLeft} days left in trial`);
-                return;
-            } else {
-                console.log('[Auth] Trial expired');
+        if (!data.active) {
+            console.log('[Auth] No active subscription found');
+            // Allow them to stay on landing page to see pricing/subscribe
+            if (!path.includes('landing.html')) {
+                window.location.href = '/landing.html#pricing';
+            }
+        } else {
+            console.log('[Auth] Subscription active:', data.status);
+            // If they are on landing but subscribed, send them to dashboard
+            if (path.includes('landing.html')) {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('force_landing') !== 'true') {
+                    window.location.href = '/';
+                }
             }
         }
-
-        // No valid subscription - redirect
-        console.log('[Auth] No valid subscription found - redirecting');
-        window.location.href = '/subscribe.html';
     } catch (error) {
-        console.error('[Auth] Error checking authentication:', error);
-        window.location.href = '/subscribe.html';
+        console.error('[Auth] Subscription check failed:', error);
+        // Fail open or closed? Here we fail open to not block users on network errors
+        // but log it for investigation.
     }
 }

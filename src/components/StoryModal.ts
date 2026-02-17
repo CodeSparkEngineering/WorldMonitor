@@ -76,7 +76,7 @@ export function openStoryModal(data: StoryData): void {
 async function renderAndDisplay(data: StoryData): Promise<void> {
   const canvas = await renderStoryToCanvas(data);
   currentDataUrl = canvas.toDataURL('image/png');
-  
+
   const binStr = atob(currentDataUrl.split(',')[1] ?? '');
   const bytes = new Uint8Array(binStr.length);
   for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
@@ -91,7 +91,7 @@ async function renderAndDisplay(data: StoryData): Promise<void> {
     img.alt = `${data.countryName} Intelligence Story`;
     content.appendChild(img);
   }
-  
+
   const shareBar = modalEl?.querySelector('.story-share-bar') as HTMLElement;
   if (shareBar) shareBar.style.display = 'flex';
 }
@@ -110,7 +110,7 @@ function downloadStory(): void {
   if (!currentDataUrl) return;
   const a = document.createElement('a');
   a.href = currentDataUrl;
-  a.download = `worldmonitor-${currentData?.countryCode.toLowerCase() || 'story'}-${Date.now()}.png`;
+  a.download = `geonexus-${currentData?.countryCode.toLowerCase() || 'story'}-${Date.now()}.png`;
   a.click();
   flashButton('.story-save', 'Saved!', 'Save');
 }
@@ -121,14 +121,14 @@ async function shareWhatsApp(data: StoryData): Promise<void> {
     return;
   }
 
-  const file = new File([currentBlob], `${data.countryCode.toLowerCase()}-worldmonitor.png`, { type: 'image/png' });
+  const file = new File([currentBlob], `${data.countryCode.toLowerCase()}-geonexus.png`, { type: 'image/png' });
   const urls = getShareUrls(data);
 
   if (navigator.share && navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ 
-        text: shareTexts.whatsapp(data).replace('\n\n', '\n'), 
-        files: [file] 
+      await navigator.share({
+        text: shareTexts.whatsapp(data).replace('\n\n', '\n'),
+        files: [file]
       });
       return;
     } catch { /* user cancelled */ }

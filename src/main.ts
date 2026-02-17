@@ -1,59 +1,39 @@
 import './styles/main.css';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { inject } from '@vercel/analytics';
 import { App } from './App';
-import { debugInjectTestEvents, debugGetCells, getCellCount } from '@/services/geo-convergence';
-import { initMetaTags } from '@/services/meta-tags';
-import { installRuntimeFetchPatch } from '@/services/runtime';
-import { loadDesktopSecrets } from '@/services/runtime-config';
+import { waitForAuth } from './services/auth-gate';
 
-// Initialize Vercel Analytics
-inject();
 
-// Initialize dynamic meta tags for sharing
-initMetaTags();
+// Initialize application
+document.addEventListener('DOMContentLoaded', async () => {
+  let user = null;
 
-// In desktop mode, route /api/* calls to the local Tauri sidecar backend.
-installRuntimeFetchPatch();
-void loadDesktopSecrets();
+  try {
+    user = await waitForAuth();
+  } catch (e) {
+    console.error('Auth check failed', e);
+  }
 
-const app = new App('app');
-app.init().catch(console.error);
+  if (!user) {
+    // Redirect to Landing Page
+    console.log('[Main] User not authenticated. Redirecting to landing.');
+    window.location.href = '/landing.html';
+  } else {
+    // User is authenticated
+    console.log('[Main] User authenticated. Initializing application.');
 
-// Debug helpers for geo-convergence testing (remove in production)
-(window as unknown as Record<string, unknown>).geoDebug = {
-  inject: debugInjectTestEvents,
-  cells: debugGetCells,
-  count: getCellCount,
-};
+    // Initialize standard app
+    try {
+      // Initialize Main App
+      const app = new App('app');
+      await app.init();
 
-// Force unregister service worker to clear stale cache
-// if ('serviceWorker' in navigator) {
-//   navigator.serviceWorker.getRegistrations().then(registrations => {
-//     for (const registration of registrations) {
-//       console.log('Unregistering Service Worker:', registration);
-//       registration.unregister();
-//     }
-//     if (registrations.length > 0) {
-//       window.location.reload();
-//     }
-//   });
-// }
-
-if (!('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window)) {
-  import('virtual:pwa-register').then(({ registerSW }) => {
-    registerSW({
-      onRegisteredSW(_swUrl, registration) {
-        if (registration) {
-          setInterval(async () => {
-            if (!navigator.onLine) return;
-            try { await registration.update(); } catch { }
-          }, 60 * 60 * 1000);
-        }
-      },
-      onOfflineReady() {
-        console.log('[PWA] App ready for offline use');
-      },
-    });
-  });
-}
+      // Remove loading indicator if present
+      const loading = document.getElementById('initial-loading');
+      if (loading) {
+        loading.remove();
+      }
+    } catch (e) {
+      console.error('Failed to initialize application:', e);
+    }
+  }
+});

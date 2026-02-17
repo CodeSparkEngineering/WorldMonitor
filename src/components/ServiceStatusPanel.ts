@@ -159,7 +159,7 @@ export class ServiceStatusPanel extends Panel {
     }
 
     const port = this.localBackend.port ?? 46123;
-    const remote = this.localBackend.remoteBase ?? 'https://worldmonitor.app';
+    const remote = this.localBackend.remoteBase ?? 'https://geonexus.app';
 
     return `
       <div class="service-status-backend">

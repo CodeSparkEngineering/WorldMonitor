@@ -7,7 +7,7 @@ export interface PanelOptions {
   infoTooltip?: string;
 }
 
-const PANEL_SPANS_KEY = 'worldmonitor-panel-spans';
+const PANEL_SPANS_KEY = 'geonexus-panel-spans';
 
 function loadPanelSpans(): Record<string, number> {
   try {
@@ -182,8 +182,8 @@ export class Panel {
       document.removeEventListener('mouseup', onMouseUp);
 
       const currentSpan = this.element.classList.contains('span-4') ? 4 :
-                          this.element.classList.contains('span-3') ? 3 :
-                          this.element.classList.contains('span-2') ? 2 : 1;
+        this.element.classList.contains('span-3') ? 3 :
+          this.element.classList.contains('span-2') ? 2 : 1;
       savePanelSpan(this.panelId, currentSpan);
     };
 
@@ -243,8 +243,8 @@ export class Panel {
       delete this.element.dataset.resizing;
       this.resizeHandle?.classList.remove('active');
       const currentSpan = this.element.classList.contains('span-4') ? 4 :
-                          this.element.classList.contains('span-3') ? 3 :
-                          this.element.classList.contains('span-2') ? 2 : 1;
+        this.element.classList.contains('span-3') ? 3 :
+          this.element.classList.contains('span-2') ? 2 : 1;
       savePanelSpan(this.panelId, currentSpan);
     };
 

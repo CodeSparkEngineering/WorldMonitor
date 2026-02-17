@@ -14,7 +14,7 @@ export default async function handler(req) {
     }
 
     try {
-        const { priceId, email } = await req.json();
+        const { priceId, email, uid } = await req.json();
 
         if (!priceId) {
             return new Response(JSON.stringify({ error: 'Price ID required' }), {
@@ -35,6 +35,7 @@ export default async function handler(req) {
         const session = await createCheckoutSession(STRIPE_SECRET_KEY, {
             priceId,
             email,
+            uid,
             successUrl: `${req.headers.get('origin')}/success?session_id={CHECKOUT_SESSION_ID}`,
             cancelUrl: `${req.headers.get('origin')}/subscribe`,
         });
@@ -52,7 +53,7 @@ export default async function handler(req) {
     }
 }
 
-async function createCheckoutSession(apiKey, { priceId, email, successUrl, cancelUrl }) {
+async function createCheckoutSession(apiKey, { priceId, email, uid, successUrl, cancelUrl }) {
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',
         headers: {
@@ -66,6 +67,7 @@ async function createCheckoutSession(apiKey, { priceId, email, successUrl, cance
             'success_url': successUrl,
             'cancel_url': cancelUrl,
             ...(email && { 'customer_email': email }),
+            ...(uid && { 'client_reference_id': uid }),
             'allow_promotion_codes': 'true',
             'billing_address_collection': 'required',
         }),

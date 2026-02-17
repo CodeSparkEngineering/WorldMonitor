@@ -1,34 +1,32 @@
 // Subscription Modal Component
 // Displays pricing and handles Stripe checkout
 
-import { authService } from '../services/auth';
+
 
 export class SubscriptionModal {
-    private modal: HTMLElement | null = null;
-    private isVisible = false;
+  private modal: HTMLElement | null = null;
+  // Removed unused isVisible property
 
-    constructor() {
-        this.createModal();
-    }
+  constructor() {
+    this.createModal();
+  }
 
-    private createModal(): void {
-        const modal = document.createElement('div');
-        modal.className = 'subscription-modal';
-        modal.innerHTML = `
+  private createModal(): void {
+    const modal = document.createElement('div');
+    modal.className = 'subscription-modal';
+    modal.innerHTML = `
       <div class="subscription-overlay"></div>
       <div class="subscription-content">
         <button class="subscription-close" aria-label="Close">&times;</button>
         
-        <div class="subscription-header">
-          <h1>🌍 Welcome to GeoNexus</h1>
-          <p>Global Intelligence Dashboard with AI-Powered Insights</p>
+        <div class="form-group">
+          <label>Select Plan</label>
+          <select id="sub-plan">
+            <option value="monthly">Monthly Access ($19.90/mo)</option>
+            <option value="annual">Annual Access ($169.99/yr)</option>
+          </select>
         </div>
-
-        <div class="subscription-plans">
-          <div class="plan-card" data-plan="monthly">
-            <div class="plan-badge">Most Popular</div>
-            <h3>Monthly</h3>
-            <div class="plan-price">
+        <div class="plan-price">
               <span class="currency">$</span>
               <span class="amount">19.90</span>
               <span class="period">/month</span>
@@ -67,11 +65,6 @@ export class SubscriptionModal {
           </div>
         </div>
 
-        <div class="subscription-trial">
-          <button class="trial-button">Start 7-Day Free Trial</button>
-          <p class="trial-note">No credit card required • Cancel anytime</p>
-        </div>
-
         <div class="subscription-footer">
           <p>Powered by <strong>CodeSpark Engineering</strong></p>
           <p class="secure-note">🔒 Secure payment via Stripe</p>
@@ -79,95 +72,80 @@ export class SubscriptionModal {
       </div>
     `;
 
-        document.body.appendChild(modal);
-        this.modal = modal;
+    document.body.appendChild(modal);
+    this.modal = modal;
 
-        // Event listeners
-        modal.querySelector('.subscription-close')?.addEventListener('click', () => this.hide());
-        modal.querySelector('.subscription-overlay')?.addEventListener('click', () => this.hide());
-        modal.querySelector('.trial-button')?.addEventListener('click', () => this.startTrial());
+    // Event listeners
+    modal.querySelector('.subscription-close')?.addEventListener('click', () => this.hide());
+    modal.querySelector('.subscription-overlay')?.addEventListener('click', () => this.hide());
 
-        // Subscribe buttons
-        modal.querySelectorAll('.plan-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const priceId = (e.target as HTMLElement).dataset.priceId;
-                if (priceId) this.handleSubscribe(priceId);
-            });
-        });
+    // Subscribe buttons
+    modal.querySelectorAll('.plan-button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        const priceId = (e.target as HTMLElement).dataset.priceId;
+        if (priceId) this.handleSubscribe(priceId);
+      });
+    });
 
-        this.addStyles();
+    this.addStyles();
+  }
+
+  private async handleSubscribe(plan: string): Promise<void> {
+    const email = prompt('Enter your email for subscription:');
+    if (!email || !email.includes('@')) {
+      alert('Please enter a valid email address');
+      return;
     }
 
-    private async startTrial(): Promise<void> {
-        const email = prompt('Enter your email to start your 7-day free trial:');
-        if (!email || !email.includes('@')) {
-            alert('Please enter a valid email address');
-            return;
-        }
+    try {
+      // Get Stripe price ID from environment
+      const priceId = plan === 'monthly'
+        ? import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID
+        : import.meta.env.VITE_STRIPE_ANNUAL_PRICE_ID;
 
-        authService.startTrial(email);
-        alert('Trial started! You have 7 days of full access.');
-        this.hide();
-        window.location.reload();
+      if (!priceId) {
+        alert('Subscription not configured. Please contact support.');
+        return;
+      }
+
+      // Create checkout session
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId, email }),
+      });
+
+      const { sessionId, error } = await response.json();
+
+      if (error) {
+        alert(`Error: ${error}`);
+        return;
+      }
+
+      // Redirect to Stripe checkout
+      const stripe = (window as any).Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      await stripe.redirectToCheckout({ sessionId });
+    } catch (error) {
+      console.error('[Subscription] Error:', error);
+      alert('Failed to start checkout. Please try again.');
     }
+  }
 
-    private async handleSubscribe(plan: string): Promise<void> {
-        const email = prompt('Enter your email for subscription:');
-        if (!email || !email.includes('@')) {
-            alert('Please enter a valid email address');
-            return;
-        }
-
-        try {
-            // Get Stripe price ID from environment
-            const priceId = plan === 'monthly'
-                ? import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID
-                : import.meta.env.VITE_STRIPE_ANNUAL_PRICE_ID;
-
-            if (!priceId) {
-                alert('Subscription not configured. Please contact support.');
-                return;
-            }
-
-            // Create checkout session
-            const response = await fetch('/api/create-checkout-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ priceId, email }),
-            });
-
-            const { url, error } = await response.json();
-
-            if (error) {
-                alert(`Error: ${error}`);
-                return;
-            }
-
-            // Redirect to Stripe checkout
-            window.location.href = url;
-        } catch (error) {
-            console.error('[Subscription] Error:', error);
-            alert('Failed to start checkout. Please try again.');
-        }
+  show(): void {
+    if (this.modal) {
+      this.modal.style.display = 'flex';
     }
+  }
 
-    show(): void {
-        if (this.modal) {
-            this.modal.style.display = 'flex';
-            this.isVisible = true;
-        }
+  hide(): void {
+    if (this.modal) {
+      this.modal.style.display = 'none';
     }
+  }
 
-    hide(): void {
-        if (this.modal) {
-            this.modal.style.display = 'none';
-            this.isVisible = false;
-        }
-    }
-
-    private addStyles(): void {
-        const style = document.createElement('style');
-        style.textContent = `
+  private addStyles(): void {
+    const style = document.createElement('style');
+    style.textContent = `
       .subscription-modal {
         display: none;
         position: fixed;
@@ -401,6 +379,6 @@ export class SubscriptionModal {
         color: #4caf50;
       }
     `;
-        document.head.appendChild(style);
-    }
+    document.head.appendChild(style);
+  }
 }

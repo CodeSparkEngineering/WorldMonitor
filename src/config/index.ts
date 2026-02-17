@@ -1,7 +1,7 @@
 // Configuration exports
 // For variant-specific builds, set VITE_VARIANT environment variable
-// VITE_VARIANT=tech → tech.worldmonitor.app (tech-focused)
-// VITE_VARIANT=full → worldmonitor.app (geopolitical)
+// VITE_VARIANT=tech → tech.geonexus.app (tech-focused)
+// VITE_VARIANT=full → geonexus.app (geopolitical)
 
 export { SITE_VARIANT } from './variant';
 
