@@ -39,7 +39,7 @@ export default function Showcase() {
                         {/* Browser Bar Mockup */}
                         <div className="h-8 bg-zinc-800/80 border-b border-zinc-700 flex items-center px-4 gap-2">
                             <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
-                            <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
+                            <div className="w-3 h-3 rounded-full bg-electric-500/20 border border-electric-500/50" />
                             <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
                             <div className="ml-4 flex-1 max-w-2xl h-5 bg-zinc-900/50 rounded text-[10px] flex items-center px-3 text-zinc-500 font-mono">
                                 https://app.geonexus.io/dashboard/global-view

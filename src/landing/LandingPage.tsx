@@ -9,7 +9,7 @@ import Showcase from './components/Showcase';
 
 export default function LandingPage() {
     return (
-        <div className="bg-zinc-950 text-gray-50 min-h-screen selection:bg-yellow-200 selection:text-black">
+        <div className="bg-electric-950 text-gray-50 min-h-screen selection:bg-electric-400 selection:text-black">
             <NetworkBackground />
             <div className="relative z-10 flex flex-col min-h-screen">
                 <Navbar />

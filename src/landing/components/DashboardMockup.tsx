@@ -27,29 +27,29 @@ export default function DashboardMockup() {
             <div className="absolute top-0 w-full h-8 bg-black/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 justify-between z-30">
                 <div className="flex gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-red-500/30" />
-                    <div className="w-2 h-2 rounded-full bg-yellow-500/30" />
+                    <div className="w-2 h-2 rounded-full bg-electric-500/30" />
                     <div className="w-2 h-2 rounded-full bg-green-500/30" />
                 </div>
                 <div className="font-mono text-[9px] text-zinc-500 tracking-[0.3em] font-bold">
                     STRATEGIC_COMMAND_LINK_ESTABLISHED
                 </div>
                 <div className="flex gap-2 items-center">
-                    <Activity className="w-3 h-3 text-yellow-200/50 animate-pulse" />
+                    <Activity className="w-3 h-3 text-electric-500/50 animate-pulse" />
                 </div>
             </div>
 
             {/* 3. HUD Overlays (Z-Index 10) */}
             <div className="absolute inset-0 pointer-events-none z-10">
                 {/* HUD Scan Line */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-yellow-200/[0.03] to-transparent h-[100%] w-full animate-[scan_8s_linear_infinite]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-electric-500/[0.03] to-transparent h-[100%] w-full animate-[scan_8s_linear_infinite]" />
 
                 {/* Corner Labels (Animated HUD) */}
                 <motion.div
-                    className="absolute top-12 left-6 p-2 border-l border-yellow-200/10"
+                    className="absolute top-12 left-6 p-2 border-l border-electric-500/10"
                     whileHover={{ x: 10, y: 10 }}
                 >
                     <div className="text-[8px] font-mono text-zinc-500 uppercase">Input_Source</div>
-                    <div className="text-[10px] font-mono text-yellow-200/60 font-bold">LIVE_SAT_FEED</div>
+                    <div className="text-[10px] font-mono text-electric-500/60 font-bold">LIVE_SAT_FEED</div>
                 </motion.div>
 
                 {/* Reticle Overlay */}
@@ -59,7 +59,7 @@ export default function DashboardMockup() {
                     transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 >
                     <div className="w-48 h-48 border border-white/5 rounded-full flex items-center justify-center">
-                        <div className="w-32 h-32 border border-yellow-200/10 rounded-full animate-pulse" />
+                        <div className="w-32 h-32 border border-electric-500/10 rounded-full animate-pulse" />
                     </div>
                 </motion.div>
             </div>

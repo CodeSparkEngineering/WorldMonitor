@@ -73,8 +73,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             </button>
 
                             <div className="flex justify-center mb-6">
-                                <div className="w-12 h-12 bg-yellow-200/10 rounded-full flex items-center justify-center border border-yellow-200/20">
-                                    <Lock className="w-6 h-6 text-yellow-200" />
+                                <div className="w-12 h-12 bg-electric-500/10 rounded-full flex items-center justify-center border border-electric-500/20">
+                                    <Lock className="w-6 h-6 text-electric-500" />
                                 </div>
                             </div>
 
@@ -94,7 +94,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded p-3 pl-10 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-200/50 transition-colors font-mono"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded p-3 pl-10 text-white placeholder-zinc-600 focus:outline-none focus:border-electric-500/50 transition-colors font-mono"
                                             placeholder="operative@geonexus.com"
                                             required
                                         />
@@ -109,7 +109,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                             type="password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded p-3 pl-10 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-200/50 transition-colors font-mono"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded p-3 pl-10 text-white placeholder-zinc-600 focus:outline-none focus:border-electric-500/50 transition-colors font-mono"
                                             placeholder="••••••••"
                                             required
                                         />
@@ -119,7 +119,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-yellow-200 text-black font-bold py-3 mt-6 rounded flex items-center justify-center gap-2 hover:bg-yellow-300 transition-colors disabled:opacity-50"
+                                    className="w-full bg-electric-500 text-white font-bold py-3 mt-6 rounded flex items-center justify-center gap-2 hover:bg-electric-400 transition-colors disabled:opacity-50 shadow-[0_0_20px_rgba(0,128,255,0.3)] hover:shadow-[0_0_30px_rgba(0,128,255,0.5)]"
                                 >
                                     {loading ? (
                                         <>
@@ -138,7 +138,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             <div className="mt-6 text-center">
                                 <button
                                     onClick={() => setIsRegistering(!isRegistering)}
-                                    className="text-xs font-mono text-zinc-500 hover:text-yellow-200 transition-colors flex items-center justify-center gap-2 mx-auto"
+                                    className="text-xs font-mono text-zinc-500 hover:text-electric-500 transition-colors flex items-center justify-center gap-2 mx-auto"
                                 >
                                     {isRegistering ? (
                                         <>ALREADY HAVE AN IDENTITY? LOGIN</>

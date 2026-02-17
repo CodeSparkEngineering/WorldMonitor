@@ -104,9 +104,9 @@ export default function Pricing() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-10">
-                    <span className="font-mono text-yellow-200 text-sm tracking-widest uppercase mb-2 block">Clearance Levels</span>
+                    <span className="font-mono text-electric-500 text-sm tracking-widest uppercase mb-2 block">Clearance Levels</span>
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        ACCESS <span className="text-yellow-200">PROTOCOLS</span>
+                        ACCESS <span className="text-electric-500">PROTOCOLS</span>
                     </h2>
                     <p className="text-gray-400 max-w-2xl mx-auto mb-8">
                         Choose between monthly intelligence access or full system acquisition for sovereign control.
@@ -117,19 +117,19 @@ export default function Pricing() {
                         <span className={clsx("text-sm font-mono font-bold transition-colors", billingCycle === 'monthly' ? "text-white" : "text-gray-500")}>MONTHLY</span>
                         <button
                             onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'annual' : 'monthly')}
-                            className="w-14 h-7 bg-zinc-800 rounded-full border border-zinc-700 relative p-1 transition-colors hover:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-200/50"
+                            className="w-14 h-7 bg-zinc-800 rounded-full border border-zinc-700 relative p-1 transition-colors hover:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-electric-500/50"
                             role="switch"
                             aria-checked={billingCycle === 'annual'}
                         >
                             <motion.div
                                 layout
                                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                className="w-5 h-5 bg-yellow-200 rounded-full shadow-lg"
+                                className="w-5 h-5 bg-electric-500 rounded-full shadow-lg shadow-electric-500/50"
                                 animate={{ x: billingCycle === 'annual' ? 26 : 0 }}
                             />
                         </button>
                         <span className={clsx("text-sm font-mono font-bold transition-colors", billingCycle === 'annual' ? "text-white" : "text-gray-500")}>
-                            ANNUAL <span className="text-yellow-200 text-xs ml-1">(SAVE 30%)</span>
+                            ANNUAL <span className="text-electric-500 text-xs ml-1">(SAVE 30%)</span>
                         </span>
                     </div>
                 </div>
@@ -145,18 +145,18 @@ export default function Pricing() {
                             className={clsx(
                                 "relative p-8 rounded-lg border transition-all duration-300 flex flex-col",
                                 tier.highlight
-                                    ? "bg-zinc-800 border-yellow-200 shadow-[0_0_30px_rgba(254,240,138,0.1)] scale-105 z-10"
+                                    ? "bg-zinc-800 border-electric-500 shadow-[0_0_30px_rgba(0,128,255,0.2)] scale-105 z-10"
                                     : "bg-zinc-900 border-zinc-800 hover:border-zinc-700"
                             )}
                         >
                             {tier.highlight && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-200 text-black text-xs font-bold px-3 py-1 rounded-full font-mono">
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-electric-500 text-white text-xs font-bold px-3 py-1 rounded-full font-mono shadow-[0_0_20px_rgba(0,128,255,0.4)]">
                                     POPULAR_CHOICE
                                 </div>
                             )}
 
                             <div className="flex items-center gap-2 mb-4">
-                                {tier.highlight ? <Shield className="w-5 h-5 text-yellow-200" /> : <Server className="w-5 h-5 text-gray-500" />}
+                                {tier.highlight ? <Shield className="w-5 h-5 text-electric-500" /> : <Server className="w-5 h-5 text-gray-500" />}
                                 <h3 className="font-mono text-lg text-white font-bold tracking-wider">{tier.name}</h3>
                             </div>
 
@@ -172,7 +172,7 @@ export default function Pricing() {
                             <ul className="space-y-4 mb-8">
                                 {tier.features.map((feature, i) => (
                                     <li key={i} className="flex items-start">
-                                        <Check className={clsx("w-5 h-5 mr-3 flex-shrink-0", tier.highlight ? "text-yellow-200" : "text-gray-600")} />
+                                        <Check className={clsx("w-5 h-5 mr-3 flex-shrink-0", tier.highlight ? "text-electric-500" : "text-gray-600")} />
                                         <span className="text-gray-300 text-sm">{feature}</span>
                                     </li>
                                 ))}
@@ -185,7 +185,7 @@ export default function Pricing() {
                                 className={clsx(
                                     "w-full py-4 rounded-sm font-bold text-sm tracking-wider transition-all font-mono flex items-center justify-center gap-2",
                                     tier.highlight
-                                        ? "bg-yellow-200 text-black hover:bg-yellow-300 disabled:bg-yellow-200/50"
+                                        ? "bg-electric-500 text-white hover:bg-electric-400 disabled:bg-electric-500/50 shadow-[0_0_20px_rgba(0,128,255,0.3)] hover:shadow-[0_0_30px_rgba(0,128,255,0.5)]"
                                         : "bg-zinc-700 text-white hover:bg-zinc-600 hover:text-white disabled:bg-zinc-700/50"
                                 )}>
                                 {loadingPlan === tier.name ? (
