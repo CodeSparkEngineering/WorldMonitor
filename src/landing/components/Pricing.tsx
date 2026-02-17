@@ -55,8 +55,8 @@ export default function Pricing() {
 
         // Get Price ID from env (exposed via vite.config.ts)
         const priceId = billingCycle === 'monthly'
-            ? (import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID || (process.env as any).STRIPE_MONTHLY_PRICE_ID)
-            : (import.meta.env.VITE_STRIPE_ANNUAL_PRICE_ID || (process.env as any).STRIPE_ANNUAL_PRICE_ID);
+            ? import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID
+            : import.meta.env.VITE_STRIPE_ANNUAL_PRICE_ID;
 
         if (!priceId) {
             console.error('Price ID missing for plan:', plan, billingCycle);
