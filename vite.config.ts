@@ -225,6 +225,8 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(pkg.version),
       'process.env.STRIPE_MONTHLY_PRICE_ID': JSON.stringify(process.env.STRIPE_MONTHLY_PRICE_ID || ''),
       'process.env.STRIPE_ANNUAL_PRICE_ID': JSON.stringify(process.env.STRIPE_ANNUAL_PRICE_ID || ''),
+      'import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID': JSON.stringify(process.env.STRIPE_MONTHLY_PRICE_ID || ''),
+      'import.meta.env.VITE_STRIPE_ANNUAL_PRICE_ID': JSON.stringify(process.env.STRIPE_ANNUAL_PRICE_ID || ''),
     },
     plugins: [
       htmlVariantPlugin(),

@@ -1,6 +1,6 @@
 import './styles/main.css';
 import { App } from './App';
-import { waitForAuth } from './services/auth-gate';
+import { waitForAuth, checkAuthentication } from './services/auth-gate';
 
 
 // Initialize application
@@ -18,11 +18,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[Main] User not authenticated. Redirecting to landing.');
     window.location.href = '/landing.html';
   } else {
-    // User is authenticated
-    console.log('[Main] User authenticated. Initializing application.');
-
-    // Initialize standard app
+    // User is authenticated, but must also check subscription
     try {
+      await checkAuthentication();
+      // If checkAuthentication didn't redirect, they are active
+      console.log('[Main] Subscription verified. Initializing application.');
+
       // Initialize Main App
       const app = new App('app');
       await app.init();
