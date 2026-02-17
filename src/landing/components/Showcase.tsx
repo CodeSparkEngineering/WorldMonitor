@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
 import { useRef } from 'react';
 
+import { useLanguage } from '../i18n/LanguageContext';
+
 export default function Showcase() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const { t } = useLanguage();
 
     return (
         <section className="py-32 bg-zinc-950 relative overflow-hidden">
@@ -18,11 +21,10 @@ export default function Showcase() {
                         transition={{ duration: 0.6 }}
                     >
                         <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-                            OPERATIONAL <span className="text-indigo-400">VISIBILITY</span>
+                            {t('showcase.title_prefix')} <span className="text-indigo-400">{t('showcase.title_suffix')}</span>
                         </h2>
                         <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
-                            Gain a strategic advantage with our real-time global intelligence dashboard.
-                            Monitor conflicts, assets, and economic shifts from a single command center.
+                            {t('showcase.description')}
                         </p>
                     </motion.div>
                 </div>

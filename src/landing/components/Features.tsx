@@ -1,43 +1,46 @@
 import { motion } from 'framer-motion';
 import { Globe, Ship, Cpu, ShieldAlert, Satellite, Zap } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function Features() {
+    const { t } = useLanguage();
+
     const features = [
         {
-            title: "Global 3D Visualization",
-            description: "Interactive WebGL globe visualizing real-time geopolitical events, borders, and conflict zones.",
+            title: t('features.cards.globe.title'),
+            description: t('features.cards.globe.desc'),
             icon: <Globe className="w-8 h-8 text-electric-500" />,
-            stat: "LATENCY < 50ms"
+            stat: t('features.stats.latency')
         },
         {
-            title: "Maritime Asset Tracking",
-            description: "Advanced AIS tracking for naval fleets and commercial shipping in high-risk zones.",
+            title: t('features.cards.tracking.title'),
+            description: t('features.cards.tracking.desc'),
             icon: <Ship className="w-8 h-8 text-electric-500" />,
-            stat: "24/7 MONITORING"
+            stat: t('features.stats.monitoring')
         },
         {
-            title: "AI Narrative Detection",
-            description: "NLP algorithms analyzing millions of sources to detect emerging propaganda and psyops.",
+            title: t('features.cards.ai.title'),
+            description: t('features.cards.ai.desc'),
             icon: <Cpu className="w-8 h-8 text-electric-500" />,
-            stat: "1M+ SOURCES"
+            stat: t('features.stats.sources')
         },
         {
-            title: "Conflict Heatmaps",
-            description: "Thermal overlays showing intensity of improved explosive events and troop movements.",
+            title: t('features.cards.heatmaps.title'),
+            description: t('features.cards.heatmaps.desc'),
             icon: <ShieldAlert className="w-8 h-8 text-electric-500" />,
-            stat: "LIVE UPDATES"
+            stat: t('features.stats.updates')
         },
         {
-            title: "Satellite Imagery Analysis",
-            description: "Automated change detection in high-resolution satellite feeds for infrastructure monitoring.",
+            title: t('features.cards.satellite.title'),
+            description: t('features.cards.satellite.desc'),
             icon: <Satellite className="w-8 h-8 text-electric-500" />,
-            stat: "0.5m RESOLUTION"
+            stat: t('features.stats.resolution')
         },
         {
-            title: "Strategic Alerts",
-            description: "Instant push notifications for critical events affecting your defined assets or regions.",
+            title: t('features.cards.alerts.title'),
+            description: t('features.cards.alerts.desc'),
             icon: <Zap className="w-8 h-8 text-electric-500" />,
-            stat: "INSTANT PUSH"
+            stat: t('features.stats.push')
         }
     ];
 
@@ -48,9 +51,9 @@ export default function Features() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="text-center mb-16">
-                    <span className="font-mono text-electric-500 text-sm tracking-widest uppercase mb-2 block">System Capabilities</span>
+                    <span className="font-mono text-electric-500 text-sm tracking-widest uppercase mb-2 block">{t('features.section_label')}</span>
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        INTELLIGENCE <span className="text-electric-500">MODULES</span>
+                        {t('features.title_prefix')} <span className="text-electric-500">{t('features.title_suffix')}</span>
                     </h2>
                     <div className="h-1 w-24 bg-electric-500 mx-auto rounded-full shadow-[0_0_10px_rgba(0,128,255,0.5)]" />
                 </div>

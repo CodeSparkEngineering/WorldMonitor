@@ -35,6 +35,7 @@ import { enrichEventsWithExposure } from '@/services/population-exposure';
 import { buildMapUrl, debounce, loadFromStorage, parseMapUrlState, saveToStorage, ExportPanel, getCircuitBreakerCooldownInfo, isMobileDevice } from '@/utils';
 import { reverseGeocode } from '@/utils/reverse-geocode';
 import { CountryIntelModal } from '@/components/CountryIntelModal';
+import { authService } from '@/services/auth';
 import { escapeHtml } from '@/utils/sanitize';
 import type { ParsedMapUrlState } from '@/utils';
 import {
@@ -75,6 +76,7 @@ import {
   ClimateAnomalyPanel,
   PopulationExposurePanel,
 } from '@/components';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 import type { SearchResult } from '@/components/SearchModal';
 import { collectStoryData } from '@/services/story-data';
 import { openStoryModal } from '@/components/StoryModal';
@@ -133,6 +135,7 @@ export class App {
   private initialLoadComplete = false;
   private criticalBannerEl: HTMLElement | null = null;
   private countryIntelModal: CountryIntelModal | null = null;
+  private confirmationModal: ConfirmationModal | null = null;
   private readonly isDesktopApp = isDesktopRuntime();
 
   constructor(containerId: string) {
@@ -277,6 +280,7 @@ export class App {
       this.signalModal?.showAlert(alert);
     });
     this.setupMobileWarning();
+    this.confirmationModal = new ConfirmationModal();
     this.setupPlaybackControl();
     this.setupStatusPanel();
     this.setupPizzIntIndicator();
@@ -1200,6 +1204,7 @@ export class App {
           ${this.isDesktopApp ? '' : '<button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>'}
           <button class="settings-btn" id="settingsBtn">⚙ PANELS</button>
           <button class="sources-btn" id="sourcesBtn">📡 SOURCES</button>
+          <button class="logout-btn" id="logoutBtn" title="Sign Out">LOGOUT</button>
         </div>
       </div>
       <div class="main-content">
@@ -1876,6 +1881,15 @@ export class App {
       if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
         document.getElementById('settingsModal')?.classList.remove('active');
       }
+    });
+
+    // Logout button
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+      this.confirmationModal?.show(
+        'Sign Out',
+        'Are you sure you want to sign out?',
+        () => authService.logout()
+      );
     });
 
     // Sources modal

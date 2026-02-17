@@ -2,12 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDpnCGNijgQdn7cZ6qmOP41_hFX9TYYLE4",
-    authDomain: "geonexus-monitor.firebaseapp.com",
-    projectId: "geonexus-monitor",
-    storageBucket: "geonexus-monitor.firebasestorage.app",
-    messagingSenderId: "296898600975",
-    appId: "1:296898600975:web:e1a2f7181e182489e7837a"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase
