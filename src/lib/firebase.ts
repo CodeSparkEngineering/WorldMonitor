@@ -11,5 +11,16 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+let app;
+try {
+    if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+        throw new Error('VITE_FIREBASE_API_KEY is missing. Check your environment variables.');
+    }
+    app = initializeApp(firebaseConfig);
+} catch (error) {
+    console.error('Firebase initialization failed:', error);
+    // Create a dummy app to prevent export errors, though functionality will be broken
+    app = { delete: () => Promise.resolve() } as any;
+}
+
 export const auth = getAuth(app);
