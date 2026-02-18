@@ -29,9 +29,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 toast.success('IDENTITY CONFIRMED. ACCESS GRANTED.');
             }
 
-            // Redirect to App after short delay
+            // Redirect based on intent
             setTimeout(() => {
-                window.location.href = '/';
+                // If they just registered, they definitely need a plan.
+                // If they logged in, they might also need one. 
+                // Redirecting to #pricing is safer and faster than a full app boot + redirect.
+                window.location.href = '/landing.html#pricing';
             }, 800);
 
         } catch (error: any) {
