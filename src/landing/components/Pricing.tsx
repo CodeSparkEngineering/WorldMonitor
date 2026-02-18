@@ -160,7 +160,7 @@ export default function Pricing() {
                             )}
                         >
                             {tier.highlight && (
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-electric-500 text-white text-xs font-bold px-4 py-1.5 rounded-full font-mono shadow-[0_0_20px_rgba(0,128,255,0.4)] tracking-wider">
+                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-electric-500 text-white text-[10px] sm:text-xs font-bold px-3 sm:px-4 py-1.5 rounded-full font-mono shadow-[0_0_20px_rgba(0,128,255,0.4)] tracking-wider whitespace-nowrap">
                                     RECOMMENDED
                                 </div>
                             )}

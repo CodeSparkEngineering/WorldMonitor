@@ -65,18 +65,6 @@ export default function Navbar() {
                         </div>
 
                         <div className="md:hidden flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                {languages.map((lang) => (
-                                    <button
-                                        key={lang.code}
-                                        onClick={() => setLanguage(lang.code)}
-                                        className={`text-xs font-bold transition-colors ${language === lang.code ? 'text-electric-500' : 'text-gray-500'
-                                            }`}
-                                    >
-                                        {lang.label}
-                                    </button>
-                                ))}
-                            </div>
                             <button onClick={() => setIsOpen(!isOpen)} className="text-gray-400 hover:text-white">
                                 {isOpen ? <X /> : <Menu />}
                             </button>
@@ -91,11 +79,36 @@ export default function Navbar() {
                         animate={{ opacity: 1, height: 'auto' }}
                         className="md:hidden bg-zinc-900/90 backdrop-blur border-b border-zinc-800"
                     >
-                        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 font-mono">
-                            <a href="#features" className="block px-3 py-2 text-gray-300 hover:text-electric-500 no-underline" onClick={() => setIsOpen(false)}>{t('navbar.intel_feed')}</a>
-                            <a href="#pricing" className="block px-3 py-2 text-gray-300 hover:text-electric-500 no-underline" onClick={() => setIsOpen(false)}>{t('navbar.subscription')}</a>
+                        <div className="px-4 pt-2 pb-6 space-y-4 font-mono">
+                            <div className="space-y-1">
+                                <a href="#features" className="block px-3 py-2 text-gray-300 hover:text-electric-500 no-underline" onClick={() => setIsOpen(false)}>{t('navbar.intel_feed')}</a>
+                                <a href="#pricing" className="block px-3 py-2 text-gray-300 hover:text-electric-500 no-underline" onClick={() => setIsOpen(false)}>{t('navbar.subscription')}</a>
+                            </div>
+
+                            {/* Mobile Language Selector */}
+                            <div className="px-3 py-2 border-t border-zinc-800 pt-4">
+                                <div className="flex items-center gap-4">
+                                    <Globe className="w-4 h-4 text-gray-500" />
+                                    <div className="flex gap-6">
+                                        {languages.map((lang) => (
+                                            <button
+                                                key={lang.code}
+                                                onClick={() => {
+                                                    setLanguage(lang.code);
+                                                    // Optional: keep menu open to see change? No, usually close is better but let's keep it open for feedback.
+                                                }}
+                                                className={`text-sm font-bold transition-colors ${language === lang.code ? 'text-electric-500' : 'text-gray-500 hover:text-gray-300'
+                                                    }`}
+                                            >
+                                                {lang.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
                             <button
-                                className="block w-full text-left px-3 py-2 text-electric-500 font-bold no-underline"
+                                className="block w-full text-center px-4 py-3 bg-electric-500/10 border border-electric-500 text-electric-500 font-bold no-underline rounded-sm"
                                 onClick={() => { setIsOpen(false); setIsLoginOpen(true); }}
                             >
                                 {t('navbar.access_terminal')}

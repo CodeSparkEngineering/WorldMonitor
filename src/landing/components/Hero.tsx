@@ -37,9 +37,9 @@ export default function Hero() {
                         <div className="absolute -top-4 -left-4 w-8 h-8 border-t-2 border-l-2 border-electric-500/20 group-hover:border-electric-500/50 transition-colors" />
                         <div className="absolute -top-4 -right-4 w-2 h-8 border-t-2 border-r-2 border-electric-500/10" />
 
-                        <h1 className="text-6xl md:text-8xl font-black text-white mb-8 leading-[0.9] tracking-tighter">
+                        <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white mb-8 leading-[0.9] tracking-tighter">
                             {t('hero.title_prefix')}<span className="text-electric-500">{t('hero.title_suffix')}</span><br />
-                            <span className="text-4xl md:text-6xl font-light text-gray-500 tracking-normal">{t('hero.subtitle')}</span>
+                            <span className="text-3xl sm:text-4xl md:text-6xl font-light text-gray-500 tracking-normal">{t('hero.subtitle')}</span>
                         </h1>
 
                         <p className="text-xl text-gray-400 mb-10 leading-relaxed max-w-lg border-l-2 border-electric-500/30 pl-6 italic">
