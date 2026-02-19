@@ -34,7 +34,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 // If they just registered, they definitely need a plan.
                 // If they logged in, they might also need one. 
                 // Redirecting to #pricing is safer and faster than a full app boot + redirect.
-                window.location.href = '/landing.html#pricing';
+                window.location.href = '/#pricing';
             }, 800);
 
         } catch (error: any) {

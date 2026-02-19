@@ -38,6 +38,15 @@ export default async function handler(req) {
                     console.log(`[Stripe] Granting access to user: ${uid}`);
                     // Set subscription status for 32 days (buffer for monthly)
                     await redis.set(`sub:${uid}`, 'active', { ex: 32 * 24 * 60 * 60 });
+
+                    // TODO: Trigger Automated Access Message
+                    // This is where you would call a service like SendGrid or Twilio
+                    // to send the user their login credentials or a magic link.
+                    // Example logic:
+                    // 1. Generate a temporary password if they don't have one
+                    // 2. Map Stripe email to Firebase UID
+                    // 3. Send email/SMS with the credentials
+                    console.log(`[Stripe] User ${uid} is now active. Dispatching access credentials...`);
                 } else {
                     console.warn('[Stripe] Missing UID or Redis in checkout.session.completed');
                 }
