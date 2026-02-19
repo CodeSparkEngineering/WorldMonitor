@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
 const SCREENSHOTS = [
@@ -72,7 +72,7 @@ export default function Showcase() {
                                 <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
                             </div>
                             <div className="flex-1 max-w-2xl mx-4 h-6 bg-zinc-900/50 rounded text-[10px] flex items-center px-3 text-zinc-500 font-mono justify-center">
-                                https://app.geonexus.io/dashboard/{SCREENSHOTS[currentIndex].title.toLowerCase().replace(/\s+/g, '-')}
+                                https://app.geonexus.io/dashboard/{SCREENSHOTS[currentIndex]?.title.toLowerCase().replace(/\s+/g, '-') || 'global'}
                             </div>
                             <div className="w-16" /> {/* Spacer for balance */}
                         </div>
@@ -82,8 +82,8 @@ export default function Showcase() {
                             <AnimatePresence mode='wait'>
                                 <motion.img
                                     key={currentIndex}
-                                    src={SCREENSHOTS[currentIndex].src}
-                                    alt={SCREENSHOTS[currentIndex].title}
+                                    src={SCREENSHOTS[currentIndex]?.src}
+                                    alt={SCREENSHOTS[currentIndex]?.title}
                                     initial={{ opacity: 0, scale: 1.05 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0 }}
@@ -100,8 +100,8 @@ export default function Showcase() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.2 }}
                                 >
-                                    <h3 className="text-2xl font-bold text-white mb-2">{SCREENSHOTS[currentIndex].title}</h3>
-                                    <p className="text-zinc-300">{SCREENSHOTS[currentIndex].desc}</p>
+                                    <h3 className="text-2xl font-bold text-white mb-2">{SCREENSHOTS[currentIndex]?.title}</h3>
+                                    <p className="text-zinc-300">{SCREENSHOTS[currentIndex]?.desc}</p>
                                 </motion.div>
                             </div>
 
