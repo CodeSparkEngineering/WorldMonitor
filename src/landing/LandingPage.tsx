@@ -1,6 +1,8 @@
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Features from './components/Features';
+import ValueProposition from './components/ValueProposition';
+import FAQ from './components/FAQ';
 import Pricing from './components/Pricing';
 import Footer from './components/Footer';
 import SourcesMarquee from './components/SourcesMarquee';
@@ -17,8 +19,10 @@ export default function LandingPage() {
                 <Hero />
                 <SourcesMarquee />
                 <Features />
+                <ValueProposition />
                 <Showcase />
                 <Pricing />
+                <FAQ />
                 <Footer />
             </div>
         </LanguageProvider>

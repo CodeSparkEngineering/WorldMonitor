@@ -146,6 +146,47 @@ export const translations = {
                 economic: "Economic",
                 crypto: "Crypto"
             }
+        },
+        faq: {
+            title_prefix: "COMMON",
+            title_suffix: "QUESTIONS",
+            pricing: {
+                question: "What is included in the subscription?",
+                answer: "The Analyst Access subscription provides full access to the live global dashboard, including real-time conflict tracking, AI intelligence feeds, satellite imagery analysis, and the 3D visualization globe. You also get priority support and daily intelligence briefings."
+            },
+            sources: {
+                question: "Where does the data come from?",
+                answer: "GeoNexus aggregates data from over 1 million open-source intelligence (OSINT) channels, including satellite feeds, maritime AIS data, aviation transponders, social media signals, and news outlets. Our AI cross-references these sources to verify accuracy."
+            },
+            accuracy: {
+                question: "How accurate is the predictive AI?",
+                answer: "Our predictive models perform with an 89% accuracy rate for short-term geopolitical stability forecasting. The system continuously learns from new data patterns to improve its predictive capabilities for civil unrest and economic shifts."
+            },
+            security: {
+                question: "Is my usage data secure?",
+                answer: "Absolutely. We employ military-grade AES-256 encryption for all data transmission. We do not log your specific search queries or area of interest monitoring to ensure operational security (OPSEC) for our clients."
+            },
+            api: {
+                question: "Do you offer an API for developers?",
+                answer: "Yes, an enterprise API is available for integrating GeoNexus intelligence directly into your own applications. Please contact our sales team via the 'System Acquisition' tier for API documentation and access keys."
+            }
+        },
+        value_prop: {
+            title_prefix: "WHY",
+            title_suffix: "GEONEXUS",
+            subtitle: "Outpace global events with the world's most advanced open-source intelligence platform.",
+            predictive: {
+                title: "Predictive AI Engines",
+                desc: "Don't just react to news—anticipate it. Our neural networks analyze velocity spikes in social sentiment to predict civil unrest days before it happens."
+            },
+            global: {
+                title: "Total Global Coverage",
+                desc: "From the South China Sea to the streets of Caracas. If it's happening on Earth, our satellite and digital listening posts are recording it."
+            },
+            speed: {
+                title: "Real-Time Velocity",
+                desc: "Traditional intelligence takes hours. GeoNexus delivers confirmed reports in milliseconds, giving you the critical time advantage for decision making."
+            }
         }
     },
     pt: {
@@ -253,7 +294,7 @@ export const translations = {
             processing: "PROCESSANDO..."
         },
         footer: {
-            description: "Democratizando a inteligência geopolítica de alto nível. Acesse as mesmas ferramentas usadas por empreiteiros de defesa e fundos de hedge.",
+            description: "Democratizando a inteligência geopolítica de alto nivel. Acesse as mesmas ferramentas usadas por empreiteiros de defesa e fundos de hedge.",
             system_status: "STATUS DO SISTEMA: ONLINE",
             headers: {
                 intelligence: "INTELIGÊNCIA",
@@ -291,6 +332,47 @@ export const translations = {
                 internet: "Internet",
                 economic: "Econômico",
                 crypto: "Cripto"
+            }
+        },
+        faq: {
+            title_prefix: "PERGUNTAS",
+            title_suffix: "COMUNS",
+            pricing: {
+                question: "O que está incluído na assinatura?",
+                answer: "A assinatura Acesso Analista oferece acesso total ao painel global ao vivo, incluindo rastreamento de conflitos em tempo real, feeds de inteligência de IA, análise de imagens de satélite e o globo de visualização 3D."
+            },
+            sources: {
+                question: "De onde vêm os dados?",
+                answer: "O GeoNexus agrega dados de mais de 1 milhão de canais de inteligência de código aberto (OSINT), incluindo feeds de satélite, dados AIS marítimos, transponders de aviação e sinais de mídia social."
+            },
+            accuracy: {
+                question: "Qual a precisão da IA preditiva?",
+                answer: "Nossos modelos preditivos têm uma taxa de precisão de 89% para previsões de estabilidade geopolítica de curto prazo, aprendendo continuamente com novos padrões de dados."
+            },
+            security: {
+                question: "Meus dados de uso estão seguros?",
+                answer: "Absolutamente. Utilizamos criptografia AES-256 de nível militar para todas as transmissões. Não registramos suas consultas de pesquisa específicas para garantir a segurança operacional (OPSEC)."
+            },
+            api: {
+                question: "Vocês oferecem API para desenvolvedores?",
+                answer: "Sim, uma API empresarial está disponível para integrar a inteligência do GeoNexus diretamente em seus aplicativos. Entre em contato com nossa equipe de vendas."
+            }
+        },
+        value_prop: {
+            title_prefix: "POR QUE",
+            title_suffix: "GEONEXUS",
+            subtitle: "Supere eventos globais com a plataforma de inteligência de código aberto mais avançada do mundo.",
+            predictive: {
+                title: "Motores de IA Preditiva",
+                desc: "Não apenas reaja às notícias—anticipe-as. Nossas redes neurais analisam picos de velocidade no sentimento social para prever agitação civil."
+            },
+            global: {
+                title: "Cobertura Global Total",
+                desc: "Do Mar da China Meridional às ruas de Caracas. Se está acontecendo na Terra, nossos postos de escuta digital estão registrando."
+            },
+            speed: {
+                title: "Velocidade em Tempo Real",
+                desc: "A inteligência tradicional leva horas. O GeoNexus entrega relatórios confirmados em milissegundos, dando a você a vantagem crítica de tempo."
             }
         }
     },
@@ -437,6 +519,47 @@ export const translations = {
                 internet: "Internet",
                 economic: "Económico",
                 crypto: "Cripto"
+            }
+        },
+        faq: {
+            title_prefix: "PREGUNTAS",
+            title_suffix: "COMUNES",
+            pricing: {
+                question: "¿Qué incluye la suscripción?",
+                answer: "La suscripción de Acceso de Analista proporciona acceso completo al panel global en vivo, incluido el seguimiento de conflictos en tiempo real, feeds de inteligencia de IA, análisis de imágenes satelitales y el globo de visualización 3D."
+            },
+            sources: {
+                question: "¿De dónde vienen los datos?",
+                answer: "GeoNexus agrega datos de más de 1 millón de canales de inteligencia de código abierto (OSINT), incluidos feeds satelitales, datos AIS marítimos, transpondedores de aviación y señales de redes sociales."
+            },
+            accuracy: {
+                question: "¿Qué tan precisa es la IA predictiva?",
+                answer: "Nuestros modelos predictivos tienen una tasa de precisión del 89% para pronósticos de estabilidad geopolítica a corto plazo, aprendendo continuamente de nuevos patrones de datos."
+            },
+            security: {
+                question: "¿Están seguros mis datos de uso?",
+                answer: "Absolutamente. Empleamos cifrado AES-256 de grado militar para todas las transmisiones. No registramos sus consultas de búsqueda específicas para garantizar la seguridad operativa (OPSEC)."
+            },
+            api: {
+                question: "¿Ofrecen una API para desarrolladores?",
+                answer: "Sí, hay una API empresarial disponible para integrar la inteligencia de GeoNexus directamente en sus propias aplicaciones. Póngase en contacto con nuestro equipo de ventas."
+            }
+        },
+        value_prop: {
+            title_prefix: "POR QUÉ",
+            title_suffix: "GEONEXUS",
+            subtitle: "Supere los eventos globales con la plataforma de inteligencia de código abierto más avanzada del mundo.",
+            predictive: {
+                title: "Motores de IA Predictiva",
+                desc: "No solo reaccione a las noticias, anticípelas. Nuestras redes neuronales analizan picos de velocidad en el sentimiento social para predecir disturbios civiles."
+            },
+            global: {
+                title: "Cobertura Global Total",
+                desc: "Desde el Mar de China Meridional hasta las calles de Caracas. Si está sucediendo en la Tierra, nuestros puestos de escucha digital lo están registrando."
+            },
+            speed: {
+                title: "Velocidad en Tiempo Real",
+                desc: "La inteligencia tradicional lleva horas. GeoNexus entrega informes confirmados en milisegundos, dándole la ventaja de tiempo crítica."
             }
         }
     }
