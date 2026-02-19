@@ -72,7 +72,7 @@ export default function Showcase() {
                                 <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
                             </div>
                             <div className="flex-1 max-w-2xl mx-4 h-6 bg-zinc-900/50 rounded text-[10px] flex items-center px-3 text-zinc-500 font-mono justify-center">
-                                https://app.geonexus.io/dashboard/{SCREENSHOTS[currentIndex]?.title.toLowerCase().replace(/\s+/g, '-') || 'global'}
+                                https://app.geonexus.live/dashboard/{SCREENSHOTS[currentIndex]?.title.toLowerCase().replace(/\s+/g, '-') || 'global'}
                             </div>
                             <div className="w-16" /> {/* Spacer for balance */}
                         </div>
