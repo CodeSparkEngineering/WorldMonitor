@@ -36,7 +36,7 @@ class AuthService {
         try {
             await signOut(auth);
             // Redirect to landing
-            window.location.href = '/landing.html';
+            window.location.href = '/';
         } catch (error) {
             console.error('[Auth] Logout failed', error);
         }

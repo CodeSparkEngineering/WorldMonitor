@@ -20,6 +20,7 @@ export function isAuthenticated(): boolean {
 
 export async function checkAuthentication(): Promise<boolean> {
     const path = window.location.pathname;
+    const isLandingPage = path === '/' || path === '/landing' || path === '/landing.html';
 
     // Skip auth check on specific bypass pages
     if (path.includes('/success') || path.includes('/subscribe')) {
@@ -30,8 +31,8 @@ export async function checkAuthentication(): Promise<boolean> {
 
     if (!user) {
         console.log('[Auth] No user found - redirecting to landing');
-        if (!path.includes('landing.html')) {
-            window.location.href = '/landing.html';
+        if (!isLandingPage) {
+            window.location.href = '/';
             return false;
         }
         return true;
@@ -42,10 +43,10 @@ export async function checkAuthentication(): Promise<boolean> {
         const response = await fetch(`/api/check-subscription?uid=${user.uid}`);
         if (!response.ok) {
             console.error('[Auth] Subscription API error:', response.status);
-            if (!path.includes('landing.html')) {
+            if (!isLandingPage) {
                 toast.error('AUTHENTICATION SYSTEM ERROR. REDIRECTING...');
                 await new Promise(r => setTimeout(r, 2000));
-                window.location.href = '/landing.html';
+                window.location.href = '/';
                 return false;
             }
             return true;
@@ -55,20 +56,21 @@ export async function checkAuthentication(): Promise<boolean> {
 
         if (!data.active) {
             console.log('[Auth] No active subscription found');
-            if (!path.includes('landing.html')) {
+            if (!isLandingPage) {
                 toast.warning('NO ACTIVE SUBSCRIPTION DETECTED. REDIRECTING TO PRICING...');
                 // Wait for toast to be visible
                 await new Promise(r => setTimeout(r, 2500));
-                window.location.href = '/landing.html#pricing';
+                window.location.href = '/#pricing';
                 return false;
             }
             return true;
         } else {
             console.log('[Auth] Subscription active:', data.status);
-            if (path.includes('landing.html')) {
+            if (isLandingPage) {
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('force_landing') !== 'true') {
-                    window.location.href = '/';
+                    // Redirect to app if on landing and subscribed
+                    window.location.href = '/app';
                     return false;
                 }
             }
@@ -77,10 +79,10 @@ export async function checkAuthentication(): Promise<boolean> {
     } catch (error) {
         console.error('[Auth] Subscription check failed:', error);
         // Fail CLOSED for security
-        if (!path.includes('landing.html')) {
+        if (!isLandingPage) {
             toast.error('CONNECTION ERROR. SECURE ACCESS REQUIRED.');
             await new Promise(r => setTimeout(r, 2000));
-            window.location.href = '/landing.html';
+            window.location.href = '/';
             return false;
         }
         return true;

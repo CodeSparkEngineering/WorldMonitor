@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) {
     // Redirect to Landing Page
     console.log('[Main] User not authenticated. Redirecting to landing.');
-    window.location.href = '/landing.html';
+    window.location.href = '/';
   } else {
     // User is authenticated, but must also check subscription
     try {
