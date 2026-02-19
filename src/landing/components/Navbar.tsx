@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { Language } from '../i18n/translations';
 
 import LoginModal from './LoginModal';
+import { auth } from '../../lib/firebase';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -56,7 +57,14 @@ export default function Navbar() {
                                 </div>
 
                                 <button
-                                    onClick={() => setIsLoginOpen(true)}
+                                    onClick={() => {
+                                        const user = auth.currentUser;
+                                        if (user) {
+                                            window.location.href = '/app';
+                                        } else {
+                                            setIsLoginOpen(true);
+                                        }
+                                    }}
                                     className="bg-electric-500/10 border border-electric-500 text-electric-500 px-4 py-2 rounded-sm font-bold hover:bg-electric-500 hover:text-white transition-all no-underline cursor-pointer shadow-[0_0_20px_rgba(0,128,255,0.2)] hover:shadow-[0_0_30px_rgba(0,128,255,0.4)]"
                                 >
                                     {t('navbar.access_terminal')}

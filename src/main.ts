@@ -20,21 +20,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     // User is authenticated, but must also check subscription
     try {
-      await checkAuthentication();
-      // If checkAuthentication didn't redirect, they are active
+      const active = await checkAuthentication();
+      if (!active) return; // checkAuthentication handled redirect
+
       console.log('[Main] Subscription verified. Initializing application.');
 
       // Initialize Main App
       const app = new App('app');
       await app.init();
-
-      // Remove loading indicator if present
+    } catch (e) {
+      console.error('Failed to initialize application:', e);
+      // Ensure user isn't stuck on loading if something fails
+      const loading = document.getElementById('initial-loading');
+      if (loading) loading.innerHTML = '<div style="color:red;font-family:mono;padding:20px">INITIALIZATION ERROR. CHECK CONSOLE.</div>';
+    } finally {
+      // Always remove loading indicator if it exists
       const loading = document.getElementById('initial-loading');
       if (loading) {
         loading.remove();
       }
-    } catch (e) {
-      console.error('Failed to initialize application:', e);
     }
   }
 });

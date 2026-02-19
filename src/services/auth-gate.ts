@@ -4,10 +4,19 @@ import { toast } from 'sonner';
 
 /**
  * Waits for Firebase Auth to initialize and returns the current user.
+ * Added a timeout to prevent hanging.
  */
 export function waitForAuth(): Promise<User | null> {
     return new Promise((resolve) => {
+        // Set a timeout as a safety net (5 seconds)
+        const timeout = setTimeout(() => {
+            console.warn('[Auth] Auth check timed out. Proceeding as guest.');
+            unsubscribe();
+            resolve(null);
+        }, 5000);
+
         const unsubscribe = onAuthStateChanged(auth, (user) => {
+            clearTimeout(timeout);
             unsubscribe();
             resolve(user);
         });
@@ -20,7 +29,10 @@ export function isAuthenticated(): boolean {
 
 export async function checkAuthentication(): Promise<boolean> {
     const path = window.location.pathname;
+    // Handle Vercel clean URLs and base path
     const isLandingPage = path === '/' || path === '/landing' || path === '/landing.html';
+
+    console.log(`[Auth] Checking path: ${path} (isLanding: ${isLandingPage})`);
 
     // Skip auth check on specific bypass pages
     if (path.includes('/success') || path.includes('/subscribe')) {
@@ -30,7 +42,7 @@ export async function checkAuthentication(): Promise<boolean> {
     const user = await waitForAuth();
 
     if (!user) {
-        console.log('[Auth] No user found - redirecting to landing');
+        console.log('[Auth] No user found - redirecting to landing if necessary');
         if (!isLandingPage) {
             window.location.href = '/';
             return false;
@@ -66,14 +78,9 @@ export async function checkAuthentication(): Promise<boolean> {
             return true;
         } else {
             console.log('[Auth] Subscription active:', data.status);
-            if (isLandingPage) {
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('force_landing') !== 'true') {
-                    // Redirect to app if on landing and subscribed
-                    window.location.href = '/app';
-                    return false;
-                }
-            }
+            // REMOVED AUTO-REDIRECT FROM LANDING: 
+            // Users can stay on landing page even if subscribed.
+            // They must click "Access Terminal" to enter the app.
             return true;
         }
     } catch (error) {
