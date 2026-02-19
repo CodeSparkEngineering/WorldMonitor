@@ -48,20 +48,24 @@
   ],
   "rewrites": [
     {
-      "source": "/app",
+      "source": "/",
       "destination": "/index.html"
     },
     {
-      "source": "/dashboard",
+      "source": "/landing",
       "destination": "/index.html"
+    },
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/app.html"
     },
     {
       "source": "/settings",
       "destination": "/settings.html"
-    },
-    {
-      "source": "/",
-      "destination": "/landing.html"
     }
   ],
   "cleanUrls": true

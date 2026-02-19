@@ -335,9 +335,9 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         input: {
-          main: resolve(__dirname, 'index.html'),
+          main: resolve(__dirname, 'app.html'),
           settings: resolve(__dirname, 'settings.html'),
-          landing: resolve(__dirname, 'landing.html'),
+          landing: resolve(__dirname, 'index.html'),
         },
         output: {
           manualChunks(id) {

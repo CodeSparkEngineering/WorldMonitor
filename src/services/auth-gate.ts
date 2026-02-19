@@ -30,7 +30,7 @@ export function isAuthenticated(): boolean {
 export async function checkAuthentication(): Promise<boolean> {
     const path = window.location.pathname;
     // Handle Vercel clean URLs and base path
-    const isLandingPage = path === '/' || path === '/landing' || path === '/landing.html';
+    const isLandingPage = path === '/' || path === '/landing' || path === '/index.html' || path === '/landing.html';
 
     console.log(`[Auth] Checking path: ${path} (isLanding: ${isLandingPage})`);
 
