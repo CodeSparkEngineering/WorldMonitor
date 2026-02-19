@@ -29,7 +29,7 @@ export default function Navbar() {
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center gap-2">
                             <Activity className="h-6 w-6 text-electric-500 animate-pulse" />
-                            <a href="/" className="font-mono text-xl tracking-tighter text-white no-underline">
+                            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="font-mono text-xl tracking-tighter text-white no-underline">
                                 GEO<span className="text-electric-500">NEXUS</span>
                                 <span className="ml-2 text-xs bg-zinc-700 px-1 py-0.5 rounded text-gray-300">{t('navbar.beta_tag')}</span>
                             </a>
