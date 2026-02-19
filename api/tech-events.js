@@ -1,4 +1,5 @@
 // Tech Events API - Parses Techmeme ICS feed and dev.events RSS, returns structured events
+import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
 export const config = { runtime: 'edge' };
 
 const ICS_URL = 'https://www.techmeme.com/newsy_events.ics';
@@ -617,6 +618,10 @@ function parseDevEventsRSS(rssText) {
 }
 
 export default async function handler(req) {
+  const cors = getCorsHeaders(req);
+  if (isDisallowedOrigin(req)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), { status: 403, headers: cors });
+  }
   const url = new URL(req.url);
   const type = url.searchParams.get('type'); // 'all', 'conferences', 'earnings', 'ipo'
   const mappable = url.searchParams.get('mappable') === 'true'; // Only return events with coords
@@ -712,7 +717,7 @@ export default async function handler(req) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...cors,
         'Cache-Control': 'public, max-age=1800, s-maxage=1800, stale-while-revalidate=300',
       },
     });
@@ -725,7 +730,7 @@ export default async function handler(req) {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...cors,
       },
     });
   }

@@ -22,38 +22,38 @@ export default function Footer() {
                     </div>
 
                     <div>
-                        <h4 className="font-mono text-white font-bold mb-6">{t('footer.headers.intelligence')}</h4>
-                        <ul className="space-y-4 text-sm text-gray-400">
-                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline">{t('footer.links.live_map')}</a></li>
-                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline">{t('footer.links.osint')}</a></li>
-                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline">{t('footer.links.satellite')}</a></li>
-                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline">{t('footer.links.conflict')}</a></li>
+                        <h4 className="font-mono text-white font-bold mb-6 tracking-tight">{t('footer.headers.intelligence')}</h4>
+                        <ul className="space-y-4 text-sm text-zinc-400 font-mono">
+                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline block py-1 hover:translate-x-1 duration-200">{t('footer.links.live_map')}</a></li>
+                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline block py-1 hover:translate-x-1 duration-200">{t('footer.links.osint')}</a></li>
+                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline block py-1 hover:translate-x-1 duration-200">{t('footer.links.conflict')}</a></li>
                         </ul>
                     </div>
 
                     <div>
-                        <h4 className="font-mono text-white font-bold mb-6">{t('footer.headers.company')}</h4>
-                        <ul className="space-y-4 text-sm text-gray-400">
-                            <li><a href="https://codesparkengineering.com/" target="_blank" rel="noopener noreferrer" className="hover:text-electric-500 transition-colors no-underline">{t('footer.links.about')}</a></li>
-                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline">{t('footer.links.methodology')}</a></li>
-                            <li><a href="mailto:codespark.dev@proton.me" className="hover:text-electric-500 transition-colors no-underline">{t('footer.links.security')}</a></li>
-                            <li><a href="https://wa.me/message/D4VY7QSTGWJXO1" className="hover:text-electric-500 transition-colors no-underline">{t('footer.links.contact')}</a></li>
+                        <h4 className="font-mono text-white font-bold mb-6 tracking-tight">{t('footer.headers.company')}</h4>
+                        <ul className="space-y-4 text-sm text-zinc-400 font-mono">
+                            <li><a href="https://codesparkengineering.com/" target="_blank" rel="noopener noreferrer" className="hover:text-electric-500 transition-colors no-underline block py-1 hover:translate-x-1 duration-200">{t('footer.links.about')}</a></li>
+                            <li><a href="#" className="hover:text-electric-500 transition-colors no-underline block py-1 hover:translate-x-1 duration-200">{t('footer.links.methodology')}</a></li>
+                            <li><a href="mailto:codespark.dev@proton.me" className="hover:text-electric-500 transition-colors no-underline block py-1 hover:translate-x-1 duration-200">{t('footer.links.contact')}</a></li>
                         </ul>
                     </div>
 
-                    <div>
-                        <h4 className="font-mono text-white font-bold mb-6">{t('footer.headers.connect')}</h4>
-                        <div className="flex gap-4 mb-6">
-                            <a href="https://wa.me/message/D4VY7QSTGWJXO1" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-500 transition-colors" title="WhatsApp Contact">
-                                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                                </svg>
-                            </a>
-                            <a href="mailto:codespark.dev@proton.me" className="text-gray-400 hover:text-electric-500 transition-colors" title="Email Support"><Mail className="w-5 h-5" /></a>
-                            <a href="https://instagram.com/codesparkengineering" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-electric-500 transition-colors" title="Instagram"><Instagram className="w-5 h-5" /></a>
-                            <a href="https://github.com/codesparkengineering" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-electric-500 transition-colors" title="GitHub"><Github className="w-5 h-5" /></a>
+                    <div className="flex flex-col justify-between">
+                        <div>
+                            <h4 className="font-mono text-white font-bold mb-6 tracking-tight">{t('footer.headers.connect')}</h4>
+                            <div className="flex gap-4">
+                                <a href="https://wa.me/message/D4VY7QSTGWJXO1" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-green-500 transition-all hover:scale-110 p-2 bg-zinc-800/50 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20" title="WhatsApp Secure">
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                    </svg>
+                                </a>
+                                <a href="mailto:codespark.dev@proton.me" className="text-zinc-400 hover:text-electric-500 transition-all hover:scale-110 p-2 bg-zinc-800/50 rounded-lg hover:bg-electric-500/10 border border-transparent hover:border-electric-500/20" title="Email Encrypted"><Mail className="w-5 h-5" /></a>
+                                <a href="https://instagram.com/codesparkengineering" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-electric-500 transition-all hover:scale-110 p-2 bg-zinc-800/50 rounded-lg hover:bg-electric-500/10 border border-transparent hover:border-electric-500/20" title="Instagram Intel"><Instagram className="w-5 h-5" /></a>
+                                <a href="https://github.com/codesparkengineering" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition-all hover:scale-110 p-2 bg-zinc-800/50 rounded-lg hover:bg-white/10 border border-transparent hover:border-white/20" title="GitHub Codebase"><Github className="w-5 h-5" /></a>
+                            </div>
                         </div>
-                        <div className="text-xs text-gray-600 font-mono text-center md:text-left whitespace-pre-line">
+                        <div className="mt-6 text-[10px] text-zinc-600 font-mono tracking-wider">
                             {t('footer.encrypted')}
                         </div>
                     </div>

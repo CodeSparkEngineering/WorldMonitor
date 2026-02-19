@@ -27,29 +27,71 @@ interface PolymarketEvent {
 
 const GAMMA_API = 'https://gamma-api.polymarket.com';
 
+// Railway relay URL for Polymarket proxy (Cloudflare JA3 blocks Vercel)
+const wsRelayUrl = import.meta.env.VITE_WS_RELAY_URL || '';
+const RAILWAY_POLY_URL = wsRelayUrl
+  ? wsRelayUrl.replace('wss://', 'https://').replace('ws://', 'http://').replace(/\/$/, '') + '/polymarket'
+  : '';
+
 const breaker = createCircuitBreaker<PredictionMarket[]>({ name: 'Polymarket' });
 
 // Track whether direct browser→Polymarket fetch works
 // Cloudflare blocks server-side TLS but browsers pass JA3 fingerprint checks
 let directFetchWorks: boolean | null = null;
+let directFetchProbe: Promise<boolean> | null = null;
+let loggedDirectFetchBlocked = false;
+
+function logDirectFetchBlockedOnce(): void {
+  if (loggedDirectFetchBlocked) return;
+  loggedDirectFetchBlocked = true;
+  console.log('[Polymarket] Direct fetch blocked by Cloudflare, using proxy');
+}
+
+async function probeDirectFetchCapability(): Promise<boolean> {
+  if (directFetchWorks !== null) return directFetchWorks;
+  if (!directFetchProbe) {
+    directFetchProbe = fetch(`${GAMMA_API}/events?closed=false&order=volume&ascending=false&limit=1`, {
+      headers: { 'Accept': 'application/json' },
+    })
+      .then(resp => {
+        directFetchWorks = resp.ok;
+        if (directFetchWorks) {
+          console.log('[Polymarket] Direct browser fetch working');
+        } else {
+          logDirectFetchBlockedOnce();
+        }
+        return directFetchWorks;
+      })
+      .catch(() => {
+        directFetchWorks = false;
+        logDirectFetchBlockedOnce();
+        return false;
+      })
+      .finally(() => {
+        directFetchProbe = null;
+      });
+  }
+  return directFetchProbe;
+}
 
 async function polyFetch(endpoint: 'events' | 'markets', params: Record<string, string>): Promise<Response> {
   const qs = new URLSearchParams(params).toString();
 
-  // Try direct browser fetch first (Cloudflare accepts browser TLS fingerprint)
-  if (directFetchWorks !== false) {
+  // Probe direct connectivity once before parallel tag fanout to avoid reset storms.
+  const canUseDirect = directFetchWorks === true || (directFetchWorks === null && await probeDirectFetchCapability());
+  if (canUseDirect) {
     try {
       const resp = await fetch(`${GAMMA_API}/${endpoint}?${qs}`, {
         headers: { 'Accept': 'application/json' },
       });
       if (resp.ok) {
-        if (!directFetchWorks) console.log('[Polymarket] Direct browser fetch working');
+        if (directFetchWorks !== true) console.log('[Polymarket] Direct browser fetch working');
         directFetchWorks = true;
         return resp;
       }
     } catch {
       directFetchWorks = false;
-      console.log('[Polymarket] Direct fetch blocked by Cloudflare, using proxy');
+      logDirectFetchBlockedOnce();
     }
   }
 
@@ -66,14 +108,25 @@ async function polyFetch(endpoint: 'events' | 'markets', params: Record<string, 
     } catch { /* Tauri command failed, fall through to proxy */ }
   }
 
-  // Web: server proxy via Vercel edge function (expects 'tag' not 'tag_slug')
+  // Proxy params (expects 'tag' not 'tag_slug' for Vercel handler)
   const proxyParams: Record<string, string> = { endpoint };
   for (const [k, v] of Object.entries(params)) {
     proxyParams[k === 'tag_slug' ? 'tag' : k] = v;
   }
   const proxyQs = new URLSearchParams(proxyParams).toString();
 
-  // Try local proxy first (works in prod, dev proxies through production)
+  // Try Railway relay (different IP/TLS fingerprint than Vercel)
+  if (RAILWAY_POLY_URL) {
+    try {
+      const resp = await fetch(`${RAILWAY_POLY_URL}?${proxyQs}`);
+      if (resp.ok) {
+        const data = await resp.clone().json();
+        if (Array.isArray(data) && data.length > 0) return resp;
+      }
+    } catch { /* Railway unavailable */ }
+  }
+
+  // Try Vercel edge function
   try {
     const resp = await fetch(`/api/polymarket?${proxyQs}`);
     if (resp.ok) {
@@ -266,6 +319,7 @@ const COUNTRY_TAG_MAP: Record<string, string[]> = {
   'Italy': ['europe', 'politics'],
   'Poland': ['europe', 'geopolitics'],
   'Brazil': ['world', 'politics'],
+  'United Arab Emirates': ['middle-east', 'world'],
   'Mexico': ['world', 'politics'],
   'Argentina': ['world', 'politics'],
   'Canada': ['world', 'politics'],
@@ -311,7 +365,8 @@ function getCountryVariants(country: string): string[] {
     'turkey': ['turkish', 'ankara', 'erdogan'],
     'india': ['indian', 'delhi', 'modi'],
     'japan': ['japanese', 'tokyo'],
-    'brazil': ['brazilian', 'brasilia', 'lula'],
+    'brazil': ['brazilian', 'brasilia', 'lula', 'bolsonaro'],
+    'united arab emirates': ['uae', 'emirati', 'dubai', 'abu dhabi'],
     'syria': ['syrian', 'damascus', 'assad'],
     'yemen': ['yemeni', 'houthi', 'sanaa'],
     'lebanon': ['lebanese', 'beirut', 'hezbollah'],
@@ -342,8 +397,8 @@ export async function fetchCountryMarkets(country: string): Promise<PredictionMa
         seen.add(event.id);
 
         const titleLower = event.title.toLowerCase();
-        const matches = variants.some(v => titleLower.includes(v));
-        if (!matches) {
+        const eventTitleMatches = variants.some(v => titleLower.includes(v));
+        if (!eventTitleMatches) {
           const marketTitles = (event.markets ?? []).map(m => (m.question ?? '').toLowerCase());
           if (!marketTitles.some(mt => variants.some(v => mt.includes(v)))) continue;
         }
@@ -351,7 +406,17 @@ export async function fetchCountryMarkets(country: string): Promise<PredictionMa
         if (isExcluded(event.title)) continue;
 
         if (event.markets && event.markets.length > 0) {
-          const topMarket = event.markets.reduce((best, m) => {
+          // When the event title itself matches (e.g. "French election"), pick
+          // the highest-volume sub-market.  When only a sub-market matched
+          // (e.g. "Macron" inside a "next leader out" event), restrict to
+          // the matching sub-markets so we don't surface irrelevant ones.
+          const candidates = eventTitleMatches
+            ? event.markets
+            : event.markets.filter(m =>
+                variants.some(v => (m.question ?? '').toLowerCase().includes(v)));
+          if (candidates.length === 0) continue;
+
+          const topMarket = candidates.reduce((best, m) => {
             const vol = m.volumeNum ?? (m.volume ? parseFloat(m.volume) : 0);
             const bestVol = best.volumeNum ?? (best.volume ? parseFloat(best.volume) : 0);
             return vol > bestVol ? m : best;

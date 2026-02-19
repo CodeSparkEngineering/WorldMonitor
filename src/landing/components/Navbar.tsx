@@ -59,7 +59,8 @@ export default function Navbar() {
                                 <button
                                     onClick={() => {
                                         const user = auth.currentUser;
-                                        if (user) {
+                                        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                                        if (user || isLocalhost) {
                                             window.location.href = '/app';
                                         } else {
                                             setIsLoginOpen(true);
@@ -117,7 +118,16 @@ export default function Navbar() {
 
                             <button
                                 className="block w-full text-center px-4 py-3 bg-electric-500/10 border border-electric-500 text-electric-500 font-bold no-underline rounded-sm"
-                                onClick={() => { setIsOpen(false); setIsLoginOpen(true); }}
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    const user = auth.currentUser;
+                                    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                                    if (user || isLocalhost) {
+                                        window.location.href = '/app';
+                                    } else {
+                                        setIsLoginOpen(true);
+                                    }
+                                }}
                             >
                                 {t('navbar.access_terminal')}
                             </button>

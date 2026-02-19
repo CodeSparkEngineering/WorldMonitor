@@ -1,4 +1,6 @@
+
 import { Panel } from './Panel';
+import { t } from '@/services/i18n';
 import { escapeHtml } from '@/utils/sanitize';
 import { isDesktopRuntime } from '@/services/runtime';
 import {
@@ -55,7 +57,7 @@ export class ServiceStatusPanel extends Panel {
   private localBackend: LocalBackendStatus | null = null;
 
   constructor() {
-    super({ id: 'service-status', title: 'Service Status', showCount: false });
+    super({ id: 'service-status', title: t('panels.serviceStatus'), showCount: false });
     void this.fetchStatus();
     this.refreshInterval = setInterval(() => this.fetchStatus(), 60000);
   }

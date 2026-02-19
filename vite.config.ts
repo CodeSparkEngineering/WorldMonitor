@@ -3,7 +3,10 @@ import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
+
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
+
+const isE2E = process.env.VITE_E2E === '1';
 
 const VARIANT_META: Record<string, {
   title: string;
@@ -11,14 +14,22 @@ const VARIANT_META: Record<string, {
   keywords: string;
   url: string;
   siteName: string;
+  shortName: string;
+  subject: string;
+  classification: string;
+  categories: string[];
   features: string[];
 }> = {
   full: {
     title: 'World Monitor - Real-Time Global Intelligence Dashboard',
     description: 'Real-time global intelligence dashboard with live news, markets, military tracking, infrastructure monitoring, and geopolitical data. OSINT in one view.',
     keywords: 'global intelligence, geopolitical dashboard, world news, market data, military bases, nuclear facilities, undersea cables, conflict zones, real-time monitoring, situation awareness, OSINT, flight tracking, AIS ships, earthquake monitor, protest tracker, power outages, oil prices, government spending, polymarket predictions',
-    url: 'https://worldmonitor.app/',
+    url: 'https://geonexus.live/',
     siteName: 'World Monitor',
+    shortName: 'WorldMonitor',
+    subject: 'Real-Time Global Intelligence and Situation Awareness',
+    classification: 'Intelligence Dashboard, OSINT Tool, News Aggregator',
+    categories: ['news', 'productivity'],
     features: [
       'Real-time news aggregation',
       'Stock market tracking',
@@ -40,6 +51,10 @@ const VARIANT_META: Record<string, {
     keywords: 'tech dashboard, AI industry, startup ecosystem, tech companies, AI labs, venture capital, tech events, tech conferences, cloud infrastructure, datacenters, tech layoffs, funding rounds, unicorns, FAANG, tech HQ, accelerators, Y Combinator, tech news',
     url: 'https://tech.worldmonitor.app/',
     siteName: 'Tech Monitor',
+    shortName: 'TechMonitor',
+    subject: 'AI, Tech Industry, and Startup Ecosystem Intelligence',
+    classification: 'Tech Dashboard, AI Tracker, Startup Intelligence',
+    categories: ['news', 'business'],
     features: [
       'Tech news aggregation',
       'AI lab tracking',
@@ -54,34 +69,60 @@ const VARIANT_META: Record<string, {
       'Service status monitoring',
     ],
   },
+  finance: {
+    title: 'Finance Monitor - Real-Time Markets & Trading Dashboard',
+    description: 'Real-time finance and trading dashboard tracking global markets, stock exchanges, central banks, commodities, forex, crypto, and economic indicators worldwide.',
+    keywords: 'finance dashboard, trading dashboard, stock market, forex, commodities, central banks, crypto, economic indicators, market news, financial centers, stock exchanges, bonds, derivatives, fintech, hedge funds, IPO tracker, market analysis',
+    url: 'https://finance.worldmonitor.app/',
+    siteName: 'Finance Monitor',
+    shortName: 'FinanceMonitor',
+    subject: 'Global Markets, Trading, and Financial Intelligence',
+    classification: 'Finance Dashboard, Market Tracker, Trading Intelligence',
+    categories: ['finance', 'news'],
+    features: [
+      'Real-time market data',
+      'Stock exchange mapping',
+      'Central bank monitoring',
+      'Commodity price tracking',
+      'Forex & currency news',
+      'Crypto & digital assets',
+      'Economic indicator alerts',
+      'IPO & earnings tracking',
+      'Financial center mapping',
+      'Sector heatmap',
+      'Market radar signals',
+    ],
+  },
 };
 
-function htmlVariantPlugin(): Plugin {
-  const variant = process.env.VITE_VARIANT || 'full';
-  const meta = VARIANT_META[variant] || VARIANT_META.full;
+const activeVariant = process.env.VITE_VARIANT || 'full';
+const activeMeta = VARIANT_META[activeVariant] || VARIANT_META.full;
 
+function htmlVariantPlugin(): Plugin {
   return {
     name: 'html-variant',
     transformIndexHtml(html) {
       return html
-        .replace(/<title>.*?<\/title>/, `<title>${meta.title}</title>`)
-        .replace(/<meta name="title" content=".*?" \/>/, `<meta name="title" content="${meta.title}" />`)
-        .replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${meta.description}" />`)
-        .replace(/<meta name="keywords" content=".*?" \/>/, `<meta name="keywords" content="${meta.keywords}" />`)
-        .replace(/<link rel="canonical" href=".*?" \/>/, `<link rel="canonical" href="${meta.url}" />`)
-        .replace(/<meta name="application-name" content=".*?" \/>/, `<meta name="application-name" content="${meta.siteName}" />`)
-        .replace(/<meta property="og:url" content=".*?" \/>/, `<meta property="og:url" content="${meta.url}" />`)
-        .replace(/<meta property="og:title" content=".*?" \/>/, `<meta property="og:title" content="${meta.title}" />`)
-        .replace(/<meta property="og:description" content=".*?" \/>/, `<meta property="og:description" content="${meta.description}" />`)
-        .replace(/<meta property="og:site_name" content=".*?" \/>/, `<meta property="og:site_name" content="${meta.siteName}" />`)
-        .replace(/<meta name="twitter:url" content=".*?" \/>/, `<meta name="twitter:url" content="${meta.url}" />`)
-        .replace(/<meta name="twitter:title" content=".*?" \/>/, `<meta name="twitter:title" content="${meta.title}" />`)
-        .replace(/<meta name="twitter:description" content=".*?" \/>/, `<meta name="twitter:description" content="${meta.description}" />`)
-        .replace(/"name": "World Monitor"/, `"name": "${meta.siteName}"`)
-        .replace(/"alternateName": "WorldMonitor"/, `"alternateName": "${meta.siteName.replace(' ', '')}"`)
-        .replace(/"url": "https:\/\/worldmonitor\.app\/"/, `"url": "${meta.url}"`)
-        .replace(/"description": "Real-time global intelligence dashboard with live news, markets, military tracking, infrastructure monitoring, and geopolitical data."/, `"description": "${meta.description}"`)
-        .replace(/"featureList": \[[\s\S]*?\]/, `"featureList": ${JSON.stringify(meta.features, null, 8).replace(/\n/g, '\n      ')}`);
+        .replace(/<title>.*?<\/title>/, `<title>${activeMeta.title}</title>`)
+        .replace(/<meta name="title" content=".*?" \/>/, `<meta name="title" content="${activeMeta.title}" />`)
+        .replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${activeMeta.description}" />`)
+        .replace(/<meta name="keywords" content=".*?" \/>/, `<meta name="keywords" content="${activeMeta.keywords}" />`)
+        .replace(/<link rel="canonical" href=".*?" \/>/, `<link rel="canonical" href="${activeMeta.url}" />`)
+        .replace(/<meta name="application-name" content=".*?" \/>/, `<meta name="application-name" content="${activeMeta.siteName}" />`)
+        .replace(/<meta property="og:url" content=".*?" \/>/, `<meta property="og:url" content="${activeMeta.url}" />`)
+        .replace(/<meta property="og:title" content=".*?" \/>/, `<meta property="og:title" content="${activeMeta.title}" />`)
+        .replace(/<meta property="og:description" content=".*?" \/>/, `<meta property="og:description" content="${activeMeta.description}" />`)
+        .replace(/<meta property="og:site_name" content=".*?" \/>/, `<meta property="og:site_name" content="${activeMeta.siteName}" />`)
+        .replace(/<meta name="subject" content=".*?" \/>/, `<meta name="subject" content="${activeMeta.subject}" />`)
+        .replace(/<meta name="classification" content=".*?" \/>/, `<meta name="classification" content="${activeMeta.classification}" />`)
+        .replace(/<meta name="twitter:url" content=".*?" \/>/, `<meta name="twitter:url" content="${activeMeta.url}" />`)
+        .replace(/<meta name="twitter:title" content=".*?" \/>/, `<meta name="twitter:title" content="${activeMeta.title}" />`)
+        .replace(/<meta name="twitter:description" content=".*?" \/>/, `<meta name="twitter:description" content="${activeMeta.description}" />`)
+        .replace(/"name": "World Monitor"/, `"name": "${activeMeta.siteName}"`)
+        .replace(/"alternateName": "WorldMonitor"/, `"alternateName": "${activeMeta.siteName.replace(' ', '')}"`)
+        .replace(/"url": "https:\/\/geonexus\.live\/"/, `"url": "${activeMeta.url}"`)
+        .replace(/"description": "Real-time global intelligence dashboard with live news, markets, military tracking, infrastructure monitoring, and geopolitical data."/, `"description": "${activeMeta.description}"`)
+        .replace(/"featureList": \[[\s\S]*?\]/, `"featureList": ${JSON.stringify(activeMeta.features, null, 8).replace(/\n/g, '\n      ')}`);
     },
   };
 }
@@ -106,8 +147,6 @@ function youtubeLivePlugin(): Plugin {
         }
 
         try {
-          // Use YouTube's oEmbed to check if a video is valid/live
-          // For now, return null to use fallback - will implement proper detection later
           res.setHeader('Content-Type', 'application/json');
           res.setHeader('Cache-Control', 'public, max-age=300');
           res.end(JSON.stringify({ videoId: null, channel }));
@@ -128,11 +167,10 @@ function localApiPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         if (!req.url?.startsWith('/api/')) return next();
-
         if (res.headersSent) return next();
 
         const url = new URL(req.url, 'http://localhost');
-        const pathname = url.pathname.replace(/^\/api\//, ''); // e.g. 'youtube/live', 'temporal-baseline'
+        const pathname = url.pathname.replace(/^\/api\//, '');
         const parts = pathname.split('/').filter(Boolean);
 
         if (parts.length === 0) return next();
@@ -140,23 +178,11 @@ function localApiPlugin(): Plugin {
         let mod;
         let finalPath = '';
 
-        // Priority:
-        // 1. Exact match (e.g. api/youtube/live.js)
-        // 2. Index match (e.g. api/youtube/live/index.js)
-        // 3. Dynamic match walking up (e.g. api/youtube/[[...path]].js)
-
         const potentialFiles = [
           `/api/${pathname}.js`,
           `/api/${pathname}/index.js`,
         ];
 
-        // Add dynamic route catch-alls walking up the tree
-        let currentParts = [...parts];
-        // Start from parts length and go down to 0 (root)
-        // e.g. youtube/live -> 2 parts
-        // 1. api/youtube/live/[[...path]].js
-        // 2. api/youtube/[[...path]].js
-        // 3. api/[[...path]].js
         for (let i = parts.length; i >= 0; i--) {
           const p = parts.slice(0, i).join('/');
           const suffix = p ? `/${p}` : '';
@@ -165,20 +191,18 @@ function localApiPlugin(): Plugin {
 
         for (const tryPath of potentialFiles) {
           try {
-            // ssrLoadModule throws if file not found
             mod = await server.ssrLoadModule(tryPath);
             if (mod) {
               finalPath = tryPath;
               break;
             }
           } catch (e: any) {
-            // Ignore load errors (file not found), try next
+            // Ignore load errors
           }
         }
 
         if (!mod || !mod.default) return next();
 
-        // Read body for POST/PUT/PATCH
         let body: any = undefined;
         if (['POST', 'PUT', 'PATCH'].includes(req.method || '')) {
           const buffers = [];
@@ -196,10 +220,8 @@ function localApiPlugin(): Plugin {
 
         try {
           const webRes: Response = await mod.default(webReq);
-
           res.statusCode = webRes.status;
           webRes.headers.forEach((v, k) => res.setHeader(k, v));
-
           const arrayBuffer = await webRes.arrayBuffer();
           res.end(Buffer.from(arrayBuffer));
         } catch (err: any) {
@@ -213,11 +235,7 @@ function localApiPlugin(): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
-
-  // Expose .env vars to the process.env for backend API modules
   Object.assign(process.env, env);
 
   return {
@@ -236,38 +254,45 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         injectRegister: false,
-
         includeAssets: [
           'favico/favicon.ico',
           'favico/apple-touch-icon.png',
           'favico/favicon-32x32.png',
         ],
-
         manifest: {
-          name: 'World Monitor - Real-Time Global Intelligence',
-          short_name: 'WorldMonitor',
-          description: 'AI-powered real-time global intelligence dashboard',
+          name: `${activeMeta.siteName} - ${activeMeta.subject}`,
+          short_name: activeMeta.shortName,
+          description: activeMeta.description,
           start_url: '/',
           scope: '/',
           display: 'standalone',
           orientation: 'any',
           theme_color: '#0a0f0a',
           background_color: '#0a0f0a',
-          categories: ['news', 'productivity'],
+          categories: activeMeta.categories,
           icons: [
             { src: '/favico/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
             { src: '/favico/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
             { src: '/favico/android-chrome-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           ],
         },
-
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          globPatterns: ['**/*.{js,css,ico,png,svg,woff2}', 'index.html'],
           globIgnores: ['**/ml-*.js', '**/onnx*.wasm'],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//, /^\/settings/],
-
+          skipWaiting: true,
+          clientsClaim: true,
+          cleanupOutdatedCaches: true,
           runtimeCaching: [
+            {
+              urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'html-navigation',
+                networkTimeoutSeconds: 3,
+              },
+            },
             {
               urlPattern: /^https?:\/\/.*\/api\/.*/i,
               handler: 'NetworkOnly',
@@ -321,10 +346,7 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
-
-        devOptions: {
-          enabled: false,
-        },
+        devOptions: { enabled: false },
       }),
     ],
     resolve: {
@@ -342,18 +364,10 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              if (id.includes('/@xenova/transformers/') || id.includes('/onnxruntime-web/')) {
-                return 'ml';
-              }
-              if (id.includes('/@deck.gl/') || id.includes('/maplibre-gl/') || id.includes('/h3-js/')) {
-                return 'map';
-              }
-              if (id.includes('/d3/')) {
-                return 'd3';
-              }
-              if (id.includes('/topojson-client/')) {
-                return 'topojson';
-              }
+              if (id.includes('/@xenova/transformers/') || id.includes('/onnxruntime-web/')) return 'ml';
+              if (id.includes('/@deck.gl/') || id.includes('/maplibre-gl/') || id.includes('/h3-js/')) return 'map';
+              if (id.includes('/d3/')) return 'd3';
+              if (id.includes('/topojson-client/')) return 'topojson';
             }
             return undefined;
           },
@@ -362,15 +376,17 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 3000,
-      open: true,
+      open: !isE2E,
+      hmr: isE2E ? false : undefined,
+      watch: {
+        ignored: ['**/test-results/**', '**/playwright-report/**', '**/.playwright-mcp/**'],
+      },
       proxy: {
-        // Yahoo Finance API
         '/api/yahoo': {
           target: 'https://query1.finance.yahoo.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/yahoo/, ''),
         },
-        // CoinGecko API
         '/api/coingecko': {
           target: 'https://api.coingecko.com',
           changeOrigin: true,
@@ -390,391 +406,113 @@ export default defineConfig(({ mode }) => {
             return `/api/v3/simple/price${qs}`;
           },
         },
-        // Polymarket API — proxy through production Vercel edge function
-        // Direct gamma-api.polymarket.com is blocked by Cloudflare JA3 fingerprinting
         '/api/polymarket': {
           target: 'https://worldmonitor.app',
           changeOrigin: true,
           configure: (proxy) => {
-            proxy.on('error', (err) => {
-              console.log('Polymarket proxy error:', err.message);
-            });
+            proxy.on('error', (err) => console.log('Polymarket proxy error:', err.message));
           },
         },
-        // USGS Earthquake API
         '/api/earthquake': {
           target: 'https://earthquake.usgs.gov',
           changeOrigin: true,
           timeout: 30000,
           rewrite: (path) => path.replace(/^\/api\/earthquake/, ''),
           configure: (proxy) => {
-            proxy.on('error', (err) => {
-              console.log('Earthquake proxy error:', err.message);
-            });
+            proxy.on('error', (err) => console.log('Earthquake proxy error:', err.message));
           },
         },
-        // PizzINT - Pentagon Pizza Index
         '/api/pizzint': {
           target: 'https://www.pizzint.watch',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/pizzint/, '/api'),
           configure: (proxy) => {
-            proxy.on('error', (err) => {
-              console.log('PizzINT proxy error:', err.message);
-            });
+            proxy.on('error', (err) => console.log('PizzINT proxy error:', err.message));
           },
         },
-        // FRED Economic Data - handled by Vercel serverless function in prod
-        // In dev, we proxy to the API directly with the key from .env
         '/api/fred-data': {
           target: 'https://api.stlouisfed.org',
           changeOrigin: true,
           rewrite: (path) => {
             const url = new URL(path, 'http://localhost');
             const seriesId = url.searchParams.get('series_id');
+            const apiKey = process.env.FRED_API_KEY || '';
             const start = url.searchParams.get('observation_start');
             const end = url.searchParams.get('observation_end');
-            const apiKey = process.env.FRED_API_KEY || '';
             return `/fred/series/observations?series_id=${seriesId}&api_key=${apiKey}&file_type=json&sort_order=desc&limit=10${start ? `&observation_start=${start}` : ''}${end ? `&observation_end=${end}` : ''}`;
           },
         },
-        // RSS Feeds - BBC
-        '/rss/bbc': {
-          target: 'https://feeds.bbci.co.uk',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/bbc/, ''),
-        },
-        // RSS Feeds - Guardian
-        '/rss/guardian': {
-          target: 'https://www.theguardian.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/guardian/, ''),
-        },
-        // RSS Feeds - NPR
-        '/rss/npr': {
-          target: 'https://feeds.npr.org',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/npr/, ''),
-        },
-        // RSS Feeds - AP News
-        '/rss/apnews': {
-          target: 'https://rsshub.app/apnews',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/apnews/, ''),
-        },
-        // RSS Feeds - Al Jazeera
-        '/rss/aljazeera': {
-          target: 'https://www.aljazeera.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/aljazeera/, ''),
-        },
-        // RSS Feeds - CNN
-        '/rss/cnn': {
-          target: 'http://rss.cnn.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/cnn/, ''),
-        },
-        // RSS Feeds - Hacker News
-        '/rss/hn': {
-          target: 'https://hnrss.org',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/hn/, ''),
-        },
-        // RSS Feeds - Ars Technica
-        '/rss/arstechnica': {
-          target: 'https://feeds.arstechnica.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/arstechnica/, ''),
-        },
-        // RSS Feeds - The Verge
-        '/rss/verge': {
-          target: 'https://www.theverge.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/verge/, ''),
-        },
-        // RSS Feeds - CNBC
-        '/rss/cnbc': {
-          target: 'https://www.cnbc.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/cnbc/, ''),
-        },
-        // RSS Feeds - MarketWatch
-        '/rss/marketwatch': {
-          target: 'https://feeds.marketwatch.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/marketwatch/, ''),
-        },
-        // RSS Feeds - Defense/Intel sources
-        '/rss/defenseone': {
-          target: 'https://www.defenseone.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/defenseone/, ''),
-        },
-        '/rss/warontherocks': {
-          target: 'https://warontherocks.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/warontherocks/, ''),
-        },
-        '/rss/breakingdefense': {
-          target: 'https://breakingdefense.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/breakingdefense/, ''),
-        },
-        '/rss/bellingcat': {
-          target: 'https://www.bellingcat.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/bellingcat/, ''),
-        },
-        // RSS Feeds - TechCrunch (layoffs)
-        '/rss/techcrunch': {
-          target: 'https://techcrunch.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/techcrunch/, ''),
-        },
-        // Google News RSS
-        '/rss/googlenews': {
-          target: 'https://news.google.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/googlenews/, ''),
-        },
-        // AI Company Blogs
-        '/rss/openai': {
-          target: 'https://openai.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/openai/, ''),
-        },
-        '/rss/anthropic': {
-          target: 'https://www.anthropic.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/anthropic/, ''),
-        },
-        '/rss/googleai': {
-          target: 'https://blog.google',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/googleai/, ''),
-        },
-        '/rss/deepmind': {
-          target: 'https://deepmind.google',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/deepmind/, ''),
-        },
-        '/rss/huggingface': {
-          target: 'https://huggingface.co',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/huggingface/, ''),
-        },
-        '/rss/techreview': {
-          target: 'https://www.technologyreview.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/techreview/, ''),
-        },
-        '/rss/arxiv': {
-          target: 'https://rss.arxiv.org',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/arxiv/, ''),
-        },
-        // Government
-        '/rss/whitehouse': {
-          target: 'https://www.whitehouse.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/whitehouse/, ''),
-        },
-        '/rss/statedept': {
-          target: 'https://www.state.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/statedept/, ''),
-        },
-        '/rss/state': {
-          target: 'https://www.state.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/state/, ''),
-        },
-        '/rss/defense': {
-          target: 'https://www.defense.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/defense/, ''),
-        },
-        '/rss/justice': {
-          target: 'https://www.justice.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/justice/, ''),
-        },
-        '/rss/cdc': {
-          target: 'https://tools.cdc.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/cdc/, ''),
-        },
-        '/rss/fema': {
-          target: 'https://www.fema.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/fema/, ''),
-        },
-        '/rss/dhs': {
-          target: 'https://www.dhs.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/dhs/, ''),
-        },
-        '/rss/fedreserve': {
-          target: 'https://www.federalreserve.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/fedreserve/, ''),
-        },
-        '/rss/sec': {
-          target: 'https://www.sec.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/sec/, ''),
-        },
-        '/rss/treasury': {
-          target: 'https://home.treasury.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/treasury/, ''),
-        },
-        '/rss/cisa': {
-          target: 'https://www.cisa.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/cisa/, ''),
-        },
-        // Think Tanks
-        '/rss/brookings': {
-          target: 'https://www.brookings.edu',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/brookings/, ''),
-        },
-        '/rss/cfr': {
-          target: 'https://www.cfr.org',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/cfr/, ''),
-        },
-        '/rss/csis': {
-          target: 'https://www.csis.org',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/csis/, ''),
-        },
-        // Defense
-        '/rss/warzone': {
-          target: 'https://www.thedrive.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/warzone/, ''),
-        },
-        '/rss/defensegov': {
-          target: 'https://www.defense.gov',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/defensegov/, ''),
-        },
-        // Security
-        '/rss/krebs': {
-          target: 'https://krebsonsecurity.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/krebs/, ''),
-        },
-        // Finance
-        '/rss/yahoonews': {
-          target: 'https://finance.yahoo.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/yahoonews/, ''),
-        },
-        // Diplomat
-        '/rss/diplomat': {
-          target: 'https://thediplomat.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/diplomat/, ''),
-        },
-        // VentureBeat
-        '/rss/venturebeat': {
-          target: 'https://venturebeat.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/venturebeat/, ''),
-        },
-        // Foreign Policy
-        '/rss/foreignpolicy': {
-          target: 'https://foreignpolicy.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/foreignpolicy/, ''),
-        },
-        // Financial Times
-        '/rss/ft': {
-          target: 'https://www.ft.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/ft/, ''),
-        },
-        // Reuters
-        '/rss/reuters': {
-          target: 'https://www.reutersagency.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/rss\/reuters/, ''),
-        },
-        // Cloudflare Radar - Internet outages
-        '/api/cloudflare-radar': {
-          target: 'https://api.cloudflare.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/cloudflare-radar/, ''),
-        },
-        // NGA Maritime Safety Information - Navigation Warnings
-        '/api/nga-msi': {
-          target: 'https://msi.nga.mil',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/nga-msi/, ''),
-        },
-        // ACLED - Armed Conflict Location & Event Data (protests, riots)
-        '/api/acled': {
-          target: 'https://acleddata.com',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/acled/, ''),
-        },
-        // GDELT GEO 2.0 API - Geolocation endpoint (must come before /api/gdelt)
-        '/api/gdelt-geo': {
-          target: 'https://api.gdeltproject.org',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/gdelt-geo/, '/api/v2/geo/geo'),
-        },
-        // GDELT GEO 2.0 API - Global event data
-        '/api/gdelt': {
-          target: 'https://api.gdeltproject.org',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/gdelt/, ''),
-        },
-        // AISStream WebSocket proxy for live vessel tracking
-        '/ws/aisstream': {
-          target: 'wss://stream.aisstream.io',
-          changeOrigin: true,
-          ws: true,
-          rewrite: (path) => path.replace(/^\/ws\/aisstream/, ''),
-        },
-        // FAA NASSTATUS - Airport delays and closures
+        '/rss/bbc': { target: 'https://feeds.bbci.co.uk', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/bbc/, '') },
+        '/rss/guardian': { target: 'https://www.theguardian.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/guardian/, '') },
+        '/rss/npr': { target: 'https://feeds.npr.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/npr/, '') },
+        '/rss/apnews': { target: 'https://rsshub.app/apnews', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/apnews/, '') },
+        '/rss/aljazeera': { target: 'https://www.aljazeera.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/aljazeera/, '') },
+        '/rss/cnn': { target: 'http://rss.cnn.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/cnn/, '') },
+        '/rss/hn': { target: 'https://hnrss.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/hn/, '') },
+        '/rss/arstechnica': { target: 'https://feeds.arstechnica.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/arstechnica/, '') },
+        '/rss/verge': { target: 'https://www.theverge.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/verge/, '') },
+        '/rss/cnbc': { target: 'https://www.cnbc.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/cnbc/, '') },
+        '/rss/marketwatch': { target: 'https://feeds.marketwatch.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/marketwatch/, '') },
+        '/rss/defenseone': { target: 'https://www.defenseone.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/defenseone/, '') },
+        '/rss/warontherocks': { target: 'https://warontherocks.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/warontherocks/, '') },
+        '/rss/breakingdefense': { target: 'https://breakingdefense.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/breakingdefense/, '') },
+        '/rss/bellingcat': { target: 'https://www.bellingcat.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/bellingcat/, '') },
+        '/rss/googlenews': { target: 'https://news.google.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/googlenews/, '') },
+        '/rss/openai': { target: 'https://openai.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/openai/, '') },
+        '/rss/anthropic': { target: 'https://www.anthropic.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/anthropic/, '') },
+        '/rss/googleai': { target: 'https://blog.google', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/googleai/, '') },
+        '/rss/deepmind': { target: 'https://deepmind.google', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/deepmind/, '') },
+        '/rss/huggingface': { target: 'https://huggingface.co', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/huggingface/, '') },
+        '/rss/techreview': { target: 'https://www.technologyreview.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/techreview/, '') },
+        '/rss/arxiv': { target: 'https://rss.arxiv.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/arxiv/, '') },
+        '/rss/whitehouse': { target: 'https://www.whitehouse.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/whitehouse/, '') },
+        '/rss/statedept': { target: 'https://www.state.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/statedept/, '') },
+        '/rss/defense': { target: 'https://www.defense.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/defense/, '') },
+        '/rss/justice': { target: 'https://www.justice.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/justice/, '') },
+        '/rss/cdc': { target: 'https://tools.cdc.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/cdc/, '') },
+        '/rss/fema': { target: 'https://www.fema.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/fema/, '') },
+        '/rss/dhs': { target: 'https://www.dhs.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/dhs/, '') },
+        '/rss/fedreserve': { target: 'https://www.federalreserve.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/fedreserve/, '') },
+        '/rss/sec': { target: 'https://www.sec.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/sec/, '') },
+        '/rss/treasury': { target: 'https://home.treasury.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/treasury/, '') },
+        '/rss/cisa': { target: 'https://www.cisa.gov', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/cisa/, '') },
+        '/rss/brookings': { target: 'https://www.brookings.edu', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/brookings/, '') },
+        '/rss/cfr': { target: 'https://www.cfr.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/cfr/, '') },
+        '/rss/csis': { target: 'https://www.csis.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/csis/, '') },
+        '/rss/warzone': { target: 'https://www.thedrive.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/warzone/, '') },
+        '/rss/krebs': { target: 'https://krebsonsecurity.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/krebs/, '') },
+        '/rss/yahoonews': { target: 'https://finance.yahoo.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/yahoonews/, '') },
+        '/rss/diplomat': { target: 'https://thediplomat.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/diplomat/, '') },
+        '/rss/venturebeat': { target: 'https://venturebeat.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/venturebeat/, '') },
+        '/rss/foreignpolicy': { target: 'https://foreignpolicy.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/foreignpolicy/, '') },
+        '/rss/ft': { target: 'https://www.ft.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/ft/, '') },
+        '/rss/reuters': { target: 'https://www.reutersagency.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/rss\/reuters/, '') },
+        '/api/cloudflare-radar': { target: 'https://api.cloudflare.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/api\/cloudflare-radar/, '') },
+        '/api/nga-msi': { target: 'https://msi.nga.mil', changeOrigin: true, rewrite: (path) => path.replace(/^\/api\/nga-msi/, '') },
+        '/api/acled': { target: 'https://acleddata.com', changeOrigin: true, rewrite: (path) => path.replace(/^\/api\/acled/, '') },
+        '/api/gdelt-geo': { target: 'https://api.gdeltproject.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/api\/gdelt-geo/, '/api/v2/geo/geo') },
+        '/api/gdelt': { target: 'https://api.gdeltproject.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/api\/gdelt/, '') },
+        '/ws/aisstream': { target: 'wss://stream.aisstream.io', changeOrigin: true, ws: true, rewrite: (path) => path.replace(/^\/ws\/aisstream/, '') },
         '/api/faa': {
           target: 'https://nasstatus.faa.gov',
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/api\/faa/, ''),
-          configure: (proxy) => {
-            proxy.on('error', (err) => {
-              console.log('FAA NASSTATUS proxy error:', err.message);
-            });
-          },
+          configure: (proxy) => proxy.on('error', (err) => console.log('FAA NASSTATUS proxy error:', err.message)),
         },
-        // OpenSky Network - Aircraft tracking (military flight detection)
         '/api/opensky': {
           target: 'https://opensky-network.org/api',
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/api\/opensky/, ''),
-          configure: (proxy) => {
-            proxy.on('error', (err) => {
-              console.log('OpenSky proxy error:', err.message);
-            });
-          },
+          configure: (proxy) => proxy.on('error', (err) => console.log('OpenSky proxy error:', err.message)),
         },
-        // ADS-B Exchange - Military aircraft tracking (backup/supplement)
         '/api/adsb-exchange': {
           target: 'https://adsbexchange.com/api',
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/api\/adsb-exchange/, ''),
-          configure: (proxy) => {
-            proxy.on('error', (err) => {
-              console.log('ADS-B Exchange proxy error:', err.message);
-            });
-          },
+          configure: (proxy) => proxy.on('error', (err) => console.log('ADS-B Exchange proxy error:', err.message)),
         },
       },
     },

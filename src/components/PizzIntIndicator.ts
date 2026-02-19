@@ -1,5 +1,6 @@
 import type { PizzIntStatus, GdeltTensionPair } from '@/types';
 import { escapeHtml } from '@/utils/sanitize';
+import { t } from '@/services/i18n';
 
 const DEFCON_COLORS: Record<number, string> = {
   1: '#ff0040',
@@ -19,14 +20,14 @@ export class PizzIntIndicator {
     this.element = document.createElement('div');
     this.element.className = 'pizzint-indicator';
     this.element.innerHTML = `
-      <button class="pizzint-toggle" title="Pentagon Pizza Index">
+      <button class="pizzint-toggle" title="${t('components.pizzint.title')}">
         <span class="pizzint-icon">🍕</span>
         <span class="pizzint-defcon">--</span>
         <span class="pizzint-score">--%</span>
       </button>
       <div class="pizzint-panel hidden">
         <div class="pizzint-header">
-          <span class="pizzint-title">Pentagon Pizza Index</span>
+          <span class="pizzint-title">${t('components.pizzint.title')}</span>
           <button class="pizzint-close">×</button>
         </div>
         <div class="pizzint-status-bar">
@@ -34,11 +35,11 @@ export class PizzIntIndicator {
         </div>
         <div class="pizzint-locations"></div>
         <div class="pizzint-tensions">
-          <div class="pizzint-tensions-title">Geopolitical Tensions</div>
+          <div class="pizzint-tensions-title">${t('components.pizzint.tensionsTitle')}</div>
           <div class="pizzint-tensions-list"></div>
         </div>
         <div class="pizzint-footer">
-          <span class="pizzint-source">Source: <a href="https://pizzint.watch" target="_blank" rel="noopener">PizzINT</a></span>
+          <span class="pizzint-source">${t('components.pizzint.source')} <a href="https://pizzint.watch" target="_blank" rel="noopener">PizzINT</a></span>
           <span class="pizzint-updated"></span>
         </div>
       </div>
@@ -63,15 +64,15 @@ export class PizzIntIndicator {
         align-items: center;
         gap: 6px;
         background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--overlay-heavy);
         border-radius: 4px;
         padding: 4px 8px;
         cursor: pointer;
         transition: all 0.2s;
       }
       .pizzint-toggle:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.4);
+        background: var(--overlay-medium);
+        border-color: var(--border-strong);
       }
       .pizzint-icon { font-size: 14px; }
       .pizzint-defcon {
@@ -79,12 +80,12 @@ export class PizzIntIndicator {
         font-weight: bold;
         padding: 2px 5px;
         border-radius: 3px;
-        background: #444;
-        color: #fff;
+        background: var(--text-ghost);
+        color: var(--accent);
       }
       .pizzint-score {
         font-size: 10px;
-        color: rgba(255, 255, 255, 0.7);
+        color: var(--text-dim);
       }
       .pizzint-panel {
         position: absolute;
@@ -92,11 +93,11 @@ export class PizzIntIndicator {
         left: 0;
         margin-top: 8px;
         width: 320px;
-        background: rgba(0, 0, 0, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: var(--bg);
+        border: 1px solid var(--overlay-heavy);
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 32px var(--shadow-color);
       }
       .pizzint-panel.hidden { display: none; }
       .pizzint-header {
@@ -104,32 +105,32 @@ export class PizzIntIndicator {
         justify-content: space-between;
         align-items: center;
         padding: 12px 16px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid var(--overlay-medium);
       }
       .pizzint-title {
         font-size: 14px;
         font-weight: bold;
-        color: #fff;
+        color: var(--accent);
       }
       .pizzint-close {
         background: none;
         border: none;
-        color: rgba(255, 255, 255, 0.5);
+        color: var(--text-faint);
         font-size: 20px;
         cursor: pointer;
         padding: 0;
         line-height: 1;
       }
-      .pizzint-close:hover { color: #fff; }
+      .pizzint-close:hover { color: var(--accent); }
       .pizzint-status-bar {
         padding: 12px 16px;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--overlay-light);
       }
       .pizzint-defcon-label {
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: rgba(255, 255, 255, 0.9);
+        color: var(--text);
         text-align: center;
       }
       .pizzint-locations {
@@ -142,12 +143,12 @@ export class PizzIntIndicator {
         justify-content: space-between;
         align-items: center;
         padding: 6px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid var(--overlay-light);
         font-size: 11px;
       }
       .pizzint-location:last-child { border-bottom: none; }
       .pizzint-location-name {
-        color: rgba(255, 255, 255, 0.8);
+        color: var(--text);
         flex: 1;
         white-space: nowrap;
         overflow: hidden;
@@ -161,21 +162,21 @@ export class PizzIntIndicator {
         font-weight: bold;
         text-transform: uppercase;
       }
-      .pizzint-location-status.spike { background: #ff0040; color: #fff; }
-      .pizzint-location-status.high { background: #ff4400; color: #fff; }
-      .pizzint-location-status.elevated { background: #ffaa00; color: #000; }
-      .pizzint-location-status.nominal { background: #00aaff; color: #fff; }
-      .pizzint-location-status.quiet { background: #00ff88; color: #000; }
-      .pizzint-location-status.closed { background: #444; color: #888; }
+      .pizzint-location-status.spike { background: var(--defcon-1); color: var(--accent); }
+      .pizzint-location-status.high { background: var(--defcon-2); color: var(--accent); }
+      .pizzint-location-status.elevated { background: var(--defcon-3); color: var(--bg); }
+      .pizzint-location-status.nominal { background: var(--defcon-4); color: var(--accent); }
+      .pizzint-location-status.quiet { background: var(--status-live); color: var(--bg); }
+      .pizzint-location-status.closed { background: var(--text-ghost); color: var(--text-dim); }
       .pizzint-tensions {
         padding: 12px 16px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid var(--overlay-medium);
       }
       .pizzint-tensions-title {
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: rgba(255, 255, 255, 0.5);
+        color: var(--text-faint);
         margin-bottom: 8px;
       }
       .pizzint-tension-row {
@@ -185,30 +186,30 @@ export class PizzIntIndicator {
         padding: 4px 0;
         font-size: 11px;
       }
-      .pizzint-tension-label { color: rgba(255, 255, 255, 0.8); }
+      .pizzint-tension-label { color: var(--text); }
       .pizzint-tension-score {
         display: flex;
         align-items: center;
         gap: 6px;
       }
-      .pizzint-tension-value { color: #fff; font-weight: bold; }
+      .pizzint-tension-value { color: var(--accent); font-weight: bold; }
       .pizzint-tension-trend { font-size: 10px; }
-      .pizzint-tension-trend.rising { color: #ff4400; }
-      .pizzint-tension-trend.falling { color: #00ff88; }
-      .pizzint-tension-trend.stable { color: #888; }
+      .pizzint-tension-trend.rising { color: var(--defcon-2); }
+      .pizzint-tension-trend.falling { color: var(--status-live); }
+      .pizzint-tension-trend.stable { color: var(--text-dim); }
       .pizzint-footer {
         display: flex;
         justify-content: space-between;
         padding: 8px 16px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid var(--overlay-medium);
         font-size: 10px;
-        color: rgba(255, 255, 255, 0.4);
+        color: var(--text-ghost);
       }
       .pizzint-footer a {
-        color: rgba(255, 255, 255, 0.6);
+        color: var(--text-faint);
         text-decoration: none;
       }
-      .pizzint-footer a:hover { color: #fff; }
+      .pizzint-footer a:hover { color: var(--accent); }
     `;
     document.head.appendChild(style);
   }
@@ -249,12 +250,12 @@ export class PizzIntIndicator {
     const updatedEl = this.element.querySelector('.pizzint-updated') as HTMLElement;
 
     const color = DEFCON_COLORS[this.status.defconLevel] || '#888';
-    defconEl.textContent = `DEFCON ${this.status.defconLevel}`;
+    defconEl.textContent = t('components.pizzint.defcon', { level: String(this.status.defconLevel) });
     defconEl.style.background = color;
     defconEl.style.color = this.status.defconLevel <= 3 ? '#000' : '#fff';
 
     scoreEl.textContent = `${this.status.aggregateActivity}%`;
-    labelEl.textContent = this.status.defconLabel;
+    labelEl.textContent = this.getDefconLabel(this.status.defconLevel);
     labelEl.style.color = color;
 
     locationsEl.innerHTML = this.status.locations.map(loc => {
@@ -269,7 +270,7 @@ export class PizzIntIndicator {
     }).join('');
 
     const timeAgo = this.formatTimeAgo(this.status.lastUpdate);
-    updatedEl.textContent = `Updated ${timeAgo}`;
+    updatedEl.textContent = t('components.pizzint.updated', { timeAgo });
   }
 
   private renderTensions(): void {
@@ -302,19 +303,25 @@ export class PizzIntIndicator {
   }
 
   private getStatusLabel(loc: { is_closed_now: boolean; is_spike: boolean; current_popularity: number }): string {
-    if (loc.is_closed_now) return 'CLOSED';
-    if (loc.is_spike) return `SPIKE ${loc.current_popularity}%`;
-    if (loc.current_popularity >= 70) return `HIGH ${loc.current_popularity}%`;
-    if (loc.current_popularity >= 40) return `ELEVATED ${loc.current_popularity}%`;
-    if (loc.current_popularity >= 15) return `NOMINAL ${loc.current_popularity}%`;
-    return `QUIET ${loc.current_popularity}%`;
+    if (loc.is_closed_now) return t('components.pizzint.statusClosed');
+    if (loc.is_spike) return `${t('components.pizzint.statusSpike')} ${loc.current_popularity}%`;
+    if (loc.current_popularity >= 70) return `${t('components.pizzint.statusHigh')} ${loc.current_popularity}%`;
+    if (loc.current_popularity >= 40) return `${t('components.pizzint.statusElevated')} ${loc.current_popularity}%`;
+    if (loc.current_popularity >= 15) return `${t('components.pizzint.statusNominal')} ${loc.current_popularity}%`;
+    return `${t('components.pizzint.statusQuiet')} ${loc.current_popularity}%`;
   }
 
   private formatTimeAgo(date: Date): string {
     const diff = Date.now() - date.getTime();
-    if (diff < 60000) return 'just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    return `${Math.floor(diff / 3600000)}h ago`;
+    if (diff < 60000) return t('components.pizzint.justNow');
+    if (diff < 3600000) return t('components.pizzint.minutesAgo', { m: String(Math.floor(diff / 60000)) });
+    return t('components.pizzint.hoursAgo', { h: String(Math.floor(diff / 3600000)) });
+  }
+
+  private getDefconLabel(level: number): string {
+    const key = `components.pizzint.defconLabels.${level}`;
+    const localized = t(key);
+    return localized === key ? this.status?.defconLabel || '' : localized;
   }
 
   public getElement(): HTMLElement {

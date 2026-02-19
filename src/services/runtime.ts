@@ -1,7 +1,7 @@
 const DEFAULT_REMOTE_HOSTS: Record<string, string> = {
   tech: 'https://tech.geonexus.app',
-  full: 'https://geonexus.app',
-  world: 'https://geonexus.app',
+  full: 'https://geonexus.live',
+  world: 'https://geonexus.live',
 };
 
 const DEFAULT_LOCAL_API_BASE = 'http://127.0.0.1:46123';
@@ -82,7 +82,7 @@ export function getRemoteApiBaseUrl(): string {
   }
 
   const variant = import.meta.env.VITE_VARIANT || 'full';
-  return DEFAULT_REMOTE_HOSTS[variant] ?? DEFAULT_REMOTE_HOSTS.full ?? 'https://geonexus.app';
+  return DEFAULT_REMOTE_HOSTS[variant] ?? DEFAULT_REMOTE_HOSTS.full ?? 'https://geonexus.live';
 }
 
 export function toRuntimeUrl(path: string): string {
@@ -99,8 +99,8 @@ export function toRuntimeUrl(path: string): string {
 }
 
 const APP_HOSTS = new Set([
-  'geonexus.app',
-  'www.geonexus.app',
+  'geonexus.live',
+  'www.geonexus.live',
   'tech.geonexus.app',
   'localhost',
   '127.0.0.1',
@@ -110,7 +110,7 @@ function isAppOriginUrl(urlStr: string): boolean {
   try {
     const u = new URL(urlStr);
     const host = u.hostname;
-    return APP_HOSTS.has(host) || host.endsWith('.geonexus.app');
+    return APP_HOSTS.has(host) || host.endsWith('.geonexus.live');
   } catch {
     return false;
   }
@@ -213,17 +213,24 @@ export function installRuntimeFetchPatch(): void {
     const localUrl = `${localBase}${target}`;
     if (debug) console.log(`[fetch] intercept → ${target}`);
 
+    const cloudFallback = async () => {
+      const cloudUrl = `${getRemoteApiBaseUrl()}${target}`;
+      if (debug) console.log(`[fetch] cloud fallback → ${cloudUrl}`);
+      return nativeFetch(cloudUrl, init);
+    };
+
     try {
       const t0 = performance.now();
       const response = await fetchLocalWithStartupRetry(nativeFetch, localUrl, localInit);
       if (debug) console.log(`[fetch] ${target} → ${response.status} (${Math.round(performance.now() - t0)}ms)`);
+      if (!response.ok) {
+        if (debug) console.log(`[fetch] local ${response.status}, falling back to cloud`);
+        return cloudFallback();
+      }
       return response;
     } catch (error) {
-      console.warn(`[runtime] Local API unavailable for ${target}`, error);
-      return new Response(JSON.stringify({ error: 'Local API unavailable' }), {
-        status: 503,
-        headers: { 'content-type': 'application/json' },
-      });
+      if (debug) console.warn(`[runtime] Local API unavailable for ${target}`, error);
+      return cloudFallback();
     }
   };
 

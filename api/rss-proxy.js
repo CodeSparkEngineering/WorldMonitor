@@ -1,3 +1,5 @@
+import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
+
 export const config = { runtime: 'edge' };
 
 // Fetch with timeout
@@ -54,6 +56,7 @@ const ALLOWED_DOMAINS = [
   'www.reutersagency.com',
   'feeds.reuters.com',
   'rsshub.app',
+  'asia.nikkei.com',
   'www.cfr.org',
   'www.csis.org',
   'www.politico.com',
@@ -121,11 +124,21 @@ const ALLOWED_DOMAINS = [
   'english.alarabiya.net',
   'www.arabnews.com',
   'www.timesofisrael.com',
+  'www.haaretz.com',
   'www.scmp.com',
   'kyivindependent.com',
   'www.themoscowtimes.com',
   'feeds.24.com',
   'feeds.capi24.com',  // News24 redirect destination
+  // International News Sources
+  'www.france24.com',
+  'www.euronews.com',
+  'www.lemonde.fr',
+  'rss.dw.com',
+  'www.africanews.com',
+  'www.lasillavacia.com',
+  'www.channelnewsasia.com',
+  'www.thehindu.com',
   // International Organizations
   'news.un.org',
   'www.iaea.org',
@@ -134,6 +147,11 @@ const ALLOWED_DOMAINS = [
   'www.crisisgroup.org',
   // Think Tanks & Research (Added 2026-01-29)
   'rusi.org',
+  'warontherocks.com',
+  'www.aei.org',
+  'responsiblestatecraft.org',
+  'www.fpri.org',
+  'jamestown.org',
   'www.chathamhouse.org',
   'ecfr.eu',
   'www.gmfus.org',
@@ -155,30 +173,14 @@ const ALLOWED_DOMAINS = [
   'www.imf.org',
   // Additional
   'news.ycombinator.com',
+  // Finance variant
+  'seekingalpha.com',
+  'www.coindesk.com',
+  'cointelegraph.com',
 ];
 
-// CORS helper - allow worldmonitor.app and Vercel preview domains
-function getCorsHeaders(req) {
-  const origin = req.headers.get('origin') || '*';
-  const allowedPatterns = [
-    /^https:\/\/(.*\.)?worldmonitor\.app$/, // Matches worldmonitor.app and *.worldmonitor.app
-    /^https:\/\/.*-elie-habib-projects\.vercel\.app$/,
-    /^https:\/\/worldmonitor.*\.vercel\.app$/,
-    /^http:\/\/localhost(:\d+)?$/,
-  ];
-
-  const isAllowed = origin === '*' || allowedPatterns.some(p => p.test(origin));
-
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://worldmonitor.app',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400',
-  };
-}
-
 export default async function handler(req) {
-  const corsHeaders = getCorsHeaders(req);
+  const corsHeaders = getCorsHeaders(req, 'GET, OPTIONS');
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -221,7 +223,44 @@ export default async function handler(req) {
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache'
       },
+      redirect: 'manual',
     }, timeout);
+
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (location) {
+        try {
+          const redirectUrl = new URL(location, feedUrl);
+          if (!ALLOWED_DOMAINS.includes(redirectUrl.hostname)) {
+            return new Response(JSON.stringify({ error: 'Redirect to disallowed domain' }), {
+              status: 403,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+          const redirectResponse = await fetchWithTimeout(redirectUrl.href, {
+            headers: {
+              'User-Agent': UA,
+              'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+              'Accept-Language': 'en-US,en;q=0.9',
+            },
+          }, timeout);
+          const data = await redirectResponse.text();
+          return new Response(data, {
+            status: redirectResponse.status,
+            headers: {
+              'Content-Type': 'application/xml',
+              'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
+              ...corsHeaders,
+            },
+          });
+        } catch (e) {
+          return new Response(JSON.stringify({ error: 'Invalid redirect', details: e.message }), {
+            status: 502,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+      }
+    }
 
     if (!response.ok) {
       throw new Error(`Upstream ${response.status} ${response.statusText}`);

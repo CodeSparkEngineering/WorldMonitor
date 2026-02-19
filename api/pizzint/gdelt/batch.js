@@ -1,6 +1,11 @@
+import { getCorsHeaders, isDisallowedOrigin } from '../../_cors.js';
 export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
+  const cors = getCorsHeaders(req);
+  if (isDisallowedOrigin(req)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), { status: 403, headers: cors });
+  }
   const url = new URL(req.url);
   const pairs = url.searchParams.get('pairs') || 'usa_russia,russia_ukraine,usa_china,china_taiwan,usa_iran,usa_venezuela';
   const dateStart = url.searchParams.get('dateStart');
@@ -28,14 +33,14 @@ export default async function handler(req) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...cors,
         'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
       },
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Failed to fetch GDELT data', details: error.message }), {
       status: 502,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { 'Content-Type': 'application/json', ...cors },
     });
   }
 }

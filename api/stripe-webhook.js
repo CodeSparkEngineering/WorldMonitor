@@ -1,4 +1,5 @@
 import { getRedis } from './_upstash-cache.js';
+import { Resend } from 'resend';
 
 export const config = {
     runtime: 'edge',
@@ -15,6 +16,9 @@ export default async function handler(req) {
     if (!STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET) {
         return new Response('Stripe not configured', { status: 500 });
     }
+
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
     try {
         const body = await req.text();
@@ -39,14 +43,38 @@ export default async function handler(req) {
                     // Set subscription status for 32 days (buffer for monthly)
                     await redis.set(`sub:${uid}`, 'active', { ex: 32 * 24 * 60 * 60 });
 
-                    // TODO: Trigger Automated Access Message
-                    // This is where you would call a service like SendGrid or Twilio
-                    // to send the user their login credentials or a magic link.
-                    // Example logic:
-                    // 1. Generate a temporary password if they don't have one
-                    // 2. Map Stripe email to Firebase UID
-                    // 3. Send email/SMS with the credentials
-                    console.log(`[Stripe] User ${uid} is now active. Dispatching access credentials...`);
+                    // Send Automated Access Message via Resend
+                    if (resend && session.customer_details?.email) {
+                        const email = session.customer_details.email;
+                        console.log(`[Stripe] Dispatching access credentials to ${email}...`);
+
+                        try {
+                            await resend.emails.send({
+                                from: 'GeoNexus <onboarding@resend.dev>',
+                                to: email,
+                                subject: 'AUTHENTICATION CONFIRMED - ACCESS GRANTED',
+                                html: `
+                                    <div style="font-family: monospace; background: #0a0a0a; color: #e8e8e8; padding: 40px; border: 1px solid #2a2a2a; border-radius: 8px;">
+                                        <h1 style="color: #0080ff; border-bottom: 1px solid #2a2a2a; padding-bottom: 20px;">ACCESS GRANTED, OPERATIVE</h1>
+                                        <p>Seu pagamento foi confirmado e sua assinatura está <strong>ATIVA</strong> no sistema <strong>GEONEXUS</strong>.</p>
+                                        <div style="background: #141414; padding: 20px; border-left: 4px solid #0080ff; margin: 20px 0;">
+                                            <p style="margin: 0;"><strong>STATUS:</strong> OPERACIONAL</p>
+                                            <p style="margin: 5px 0 0 0;"><strong>TERMINAL:</strong> <a href="${req.headers.get('origin') || ''}/app" style="color: #0080ff; text-decoration: none;">Acessar Painel Global</a></p>
+                                        </div>
+                                        <p style="font-size: 14px;">Use suas credenciais criadas no cadastro para acessar o terminal.</p>
+                                        <p style="font-size: 12px; color: #666; margin-top: 40px; border-top: 1px solid #1a1a1a; padding-top: 20px;">
+                                            SISTEMA RESTRITO GEONEXUS. USO EXCLUSIVO POR OPERATIVOS AUTORIZADOS.
+                                        </p>
+                                    </div>
+                                `
+                            });
+                            console.log(`[Stripe] Welcome email sent to ${email}`);
+                        } catch (emailErr) {
+                            console.error('[Stripe] Failed to send welcome email:', emailErr.message);
+                        }
+                    } else {
+                        console.warn('[Stripe] Skipped email sending: Resend not configured or customer email missing');
+                    }
                 } else {
                     console.warn('[Stripe] Missing UID or Redis in checkout.session.completed');
                 }

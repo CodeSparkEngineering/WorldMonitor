@@ -5,6 +5,7 @@
  */
 
 import { getCachedJson, setCachedJson } from './_upstash-cache.js';
+import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
 
 export const config = {
   runtime: 'edge',
@@ -492,12 +493,10 @@ function calculatePostures(flights) {
 }
 
 export default async function handler(req) {
-  // CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
+  const corsHeaders = getCorsHeaders(req);
+  if (isDisallowedOrigin(req)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), { status: 403, headers: corsHeaders });
+  }
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders });

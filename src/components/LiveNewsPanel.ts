@@ -1,6 +1,7 @@
 import { Panel } from './Panel';
 import { fetchLiveVideoId } from '@/services/live-news';
 import { isDesktopRuntime, getRemoteApiBaseUrl } from '@/services/runtime';
+import { t } from '../services/i18n';
 
 // YouTube IFrame Player API types
 type YouTubePlayer = {
@@ -104,7 +105,7 @@ export class LiveNewsPanel extends Panel {
   private boundMessageHandler!: (e: MessageEvent) => void;
 
   constructor() {
-    super({ id: 'live-news', title: 'Live News', showCount: false, trackActivity: false });
+    super({ id: 'live-news', title: t('panels.liveNews') });
     this.youtubeOrigin = LiveNewsPanel.resolveYouTubeOrigin();
     this.playerElementId = `live-news-player-${Date.now()}`;
     this.element.classList.add('panel-wide');
@@ -116,8 +117,15 @@ export class LiveNewsPanel extends Panel {
     this.setupIdleDetection();
   }
 
+  private get embedOrigin(): string {
+    try { return new URL(getRemoteApiBaseUrl()).origin; } catch { return 'https://geonexus.live'; }
+  }
+
   private setupBridgeMessageListener(): void {
     this.boundMessageHandler = (e: MessageEvent) => {
+      if (e.source !== this.desktopEmbedIframe?.contentWindow) return;
+      const expected = this.embedOrigin;
+      if (e.origin !== expected && e.origin !== 'http://127.0.0.1:46123') return;
       const msg = e.data;
       if (!msg || typeof msg !== 'object' || !msg.type) return;
       if (msg.type === 'yt-ready') {
@@ -412,7 +420,7 @@ export class LiveNewsPanel extends Panel {
 
   private postToEmbed(msg: Record<string, unknown>): void {
     if (!this.desktopEmbedIframe?.contentWindow) return;
-    this.desktopEmbedIframe.contentWindow.postMessage(msg, '*');
+    this.desktopEmbedIframe.contentWindow.postMessage(msg, this.embedOrigin);
   }
 
   private syncDesktopEmbedState(): void {
@@ -472,6 +480,7 @@ export class LiveNewsPanel extends Panel {
     iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
     iframe.allowFullscreen = true;
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
     iframe.setAttribute('loading', 'eager');
 
     this.playerContainer.appendChild(iframe);
@@ -481,7 +490,7 @@ export class LiveNewsPanel extends Panel {
   private static loadYouTubeApi(): Promise<void> {
     if (LiveNewsPanel.apiPromise) return LiveNewsPanel.apiPromise;
 
-    LiveNewsPanel.apiPromise = new Promise((resolve, reject) => {
+    LiveNewsPanel.apiPromise = new Promise((resolve) => {
       if (window.YT?.Player) {
         resolve();
         return;
@@ -514,7 +523,12 @@ export class LiveNewsPanel extends Panel {
       script.src = 'https://www.youtube.com/iframe_api';
       script.async = true;
       script.dataset.youtubeIframeApi = 'true';
-      script.onerror = () => reject(new Error('Failed to load YouTube IFrame API'));
+      script.onerror = () => {
+        console.warn('[LiveNews] YouTube IFrame API failed to load (ad blocker or network issue)');
+        LiveNewsPanel.apiPromise = null;
+        script.remove();
+        resolve();
+      };
       document.head.appendChild(script);
     });
 
@@ -539,7 +553,7 @@ export class LiveNewsPanel extends Panel {
     }
 
     await LiveNewsPanel.loadYouTubeApi();
-    if (this.player || !this.playerElement) return;
+    if (this.player || !this.playerElement || !window.YT?.Player) return;
 
     this.player = new window.YT!.Player(this.playerElement, {
       host: 'https://www.youtube.com',
@@ -630,9 +644,9 @@ export class LiveNewsPanel extends Panel {
     }
 
     if (this.isMuted) {
-      this.player.mute();
+      this.player.mute?.();
     } else {
-      this.player.unMute();
+      this.player.unMute?.();
     }
 
     if (this.isPlaying) {
@@ -642,19 +656,19 @@ export class LiveNewsPanel extends Panel {
         this.player.pauseVideo();
         setTimeout(() => {
           if (this.player && this.isPlaying) {
-            this.player.mute();
-            this.player.playVideo();
+            this.player.mute?.();
+            this.player.playVideo?.();
             // Restore mute state after play starts
             if (!this.isMuted) {
-              setTimeout(() => { if (this.player) this.player.unMute(); }, 500);
+              setTimeout(() => { this.player?.unMute?.(); }, 500);
             }
           }
         }, 800);
       } else {
-        this.player.playVideo();
+        this.player.playVideo?.();
       }
     } else {
-      this.player.pauseVideo();
+      this.player.pauseVideo?.();
     }
   }
 

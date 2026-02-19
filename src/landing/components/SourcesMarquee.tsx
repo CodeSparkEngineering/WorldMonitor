@@ -4,15 +4,15 @@ const SOURCES = [
     { name: "NASA", type: "satellite", color: "text-blue-500" },
     { name: "CLOUDFLARE", type: "internet", color: "text-orange-500" },
     { name: "ACLED", type: "conflict", color: "text-red-500" },
-    { name: "GDELT", type: "intelligence", color: "text-purple-400" },
+    { name: "GDELT", type: "intelligence", color: "text-blue-400" },
     { name: "OpenSky", type: "aviation", color: "text-sky-300" },
     { name: "MarineTraffic", type: "maritime", color: "text-blue-300" },
     { name: "USGS", type: "seismic", color: "text-emerald-400" },
     { name: "NOAA", type: "weather", color: "text-cyan-400" },
     { name: "Polymarket", type: "prediction", color: "text-blue-500" },
-    { name: "ReliefWeb", type: "humanitarian", color: "text-pink-400" },
+    { name: "ReliefWeb", type: "humanitarian", color: "text-red-400" },
     { name: "NetBlocks", type: "internet", color: "text-yellow-400" },
-    { name: "Chainalysis", type: "crypto", color: "text-indigo-400" },
+    { name: "Chainalysis", type: "crypto", color: "text-cyan-400" },
     { name: "IMF", type: "economic", color: "text-green-400" },
 ];
 

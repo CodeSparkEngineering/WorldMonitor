@@ -1,5 +1,7 @@
 import { Panel } from './Panel';
 import { escapeHtml } from '@/utils/sanitize';
+import { t } from '@/services/i18n';
+import { getCSSColor } from '@/utils';
 import {
   calculateStrategicRiskOverview,
   getRecentAlerts,
@@ -32,17 +34,10 @@ export class StrategicRiskPanel extends Panel {
   constructor() {
     super({
       id: 'strategic-risk',
-      title: 'Strategic Risk Overview',
+      title: t('panels.strategicRisk'),
       showCount: false,
       trackActivity: true,
-      infoTooltip: `<strong>Methodology</strong>
-        Composite score (0-100) blending:
-        <ul>
-          <li>50% Country Instability (top 5 weighted)</li>
-          <li>30% Geographic convergence zones</li>
-          <li>20% Infrastructure incidents</li>
-        </ul>
-        Auto-refreshes every 5 minutes.`,
+      infoTooltip: t('components.strategicRisk.infoTooltip'),
     });
     this.init();
   }
@@ -63,7 +58,7 @@ export class StrategicRiskPanel extends Panel {
       this.startAutoRefresh();
     } catch (error) {
       console.error('[StrategicRiskPanel] Init error:', error);
-      this.showError('Failed to calculate risk overview');
+      this.showError(t('common.failedRiskOverview'));
     }
   }
 
@@ -100,17 +95,17 @@ export class StrategicRiskPanel extends Panel {
   }
 
   private getScoreColor(score: number): string {
-    if (score >= 70) return '#ff4444';
-    if (score >= 50) return '#ff8800';
-    if (score >= 30) return '#ffaa00';
-    return '#44aa44';
+    if (score >= 70) return getCSSColor('--semantic-critical');
+    if (score >= 50) return getCSSColor('--semantic-high');
+    if (score >= 30) return getCSSColor('--semantic-elevated');
+    return getCSSColor('--semantic-normal');
   }
 
   private getScoreLevel(score: number): string {
-    if (score >= 70) return 'Critical';
-    if (score >= 50) return 'Elevated';
-    if (score >= 30) return 'Moderate';
-    return 'Low';
+    if (score >= 70) return t('components.strategicRisk.levels.critical');
+    if (score >= 50) return t('components.strategicRisk.levels.elevated');
+    if (score >= 30) return t('components.strategicRisk.levels.moderate');
+    return t('components.strategicRisk.levels.low');
   }
 
   private getTrendEmoji(trend: string): string {
@@ -123,19 +118,19 @@ export class StrategicRiskPanel extends Panel {
 
   private getTrendColor(trend: string): string {
     switch (trend) {
-      case 'escalating': return '#ff4444';
-      case 'de-escalating': return '#44aa44';
-      default: return '#888888';
+      case 'escalating': return getCSSColor('--semantic-critical');
+      case 'de-escalating': return getCSSColor('--semantic-normal');
+      default: return getCSSColor('--text-dim');
     }
   }
 
 
   private getPriorityColor(priority: AlertPriority): string {
     switch (priority) {
-      case 'critical': return '#ff4444';
-      case 'high': return '#ff8800';
-      case 'medium': return '#ffaa00';
-      case 'low': return '#88aa44';
+      case 'critical': return getCSSColor('--semantic-critical');
+      case 'high': return getCSSColor('--semantic-high');
+      case 'medium': return getCSSColor('--semantic-elevated');
+      case 'low': return getCSSColor('--semantic-normal');
     }
   }
 
@@ -244,9 +239,9 @@ export class StrategicRiskPanel extends Panel {
             </div>
           </div>
           <div class="risk-trend-container">
-            <span class="risk-trend-label">Trend</span>
+            <span class="risk-trend-label">${t('components.strategicRisk.trend')}</span>
             <div class="risk-trend" style="color: ${this.getTrendColor(this.overview.trend)}">
-              ${this.getTrendEmoji(this.overview.trend)} ${this.overview.trend.charAt(0).toUpperCase() + this.overview.trend.slice(1)}
+              ${this.getTrendEmoji(this.overview.trend)} ${this.overview.trend === 'escalating' ? t('components.strategicRisk.trends.escalating') : this.overview.trend === 'de-escalating' ? t('components.strategicRisk.trends.deEscalating') : t('components.strategicRisk.trends.stable')}
             </div>
           </div>
         </div>
@@ -321,24 +316,24 @@ export class StrategicRiskPanel extends Panel {
         <div class="risk-section-title">Top Risks</div>
         <div class="risk-list">
           ${this.overview.topRisks.map((risk, i) => {
-            // First risk is convergence - make it clickable if we have location
-            const isConvergence = i === 0 && risk.startsWith('Convergence:') && topZone;
-            if (isConvergence) {
-              return `
+      // First risk is convergence - make it clickable if we have location
+      const isConvergence = i === 0 && risk.startsWith('Convergence:') && topZone;
+      if (isConvergence) {
+        return `
                 <div class="risk-item risk-item-clickable" data-lat="${topZone.lat}" data-lon="${topZone.lon}">
                   <span class="risk-rank">${i + 1}.</span>
                   <span class="risk-text">${escapeHtml(risk)}</span>
                   <span class="risk-location-icon">↗</span>
                 </div>
               `;
-            }
-            return `
+      }
+      return `
               <div class="risk-item">
                 <span class="risk-rank">${i + 1}.</span>
                 <span class="risk-text">${escapeHtml(risk)}</span>
               </div>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </div>
     `;
@@ -356,13 +351,13 @@ export class StrategicRiskPanel extends Panel {
         <div class="risk-section-title">Recent Alerts (${this.alerts.length})</div>
         <div class="risk-alerts">
           ${displayAlerts.map(alert => {
-            const hasLocation = alert.location && alert.location.lat && alert.location.lon;
-            const clickableClass = hasLocation ? 'risk-alert-clickable' : '';
-            const locationAttrs = hasLocation
-              ? `data-lat="${alert.location!.lat}" data-lon="${alert.location!.lon}"`
-              : '';
+      const hasLocation = alert.location && alert.location.lat && alert.location.lon;
+      const clickableClass = hasLocation ? 'risk-alert-clickable' : '';
+      const locationAttrs = hasLocation
+        ? `data-lat="${alert.location!.lat}" data-lon="${alert.location!.lon}"`
+        : '';
 
-            return `
+      return `
               <div class="risk-alert ${clickableClass}" style="border-left: 3px solid ${this.getPriorityColor(alert.priority)}" ${locationAttrs}>
                 <div class="risk-alert-header">
                   <span class="risk-alert-type">${this.getTypeEmoji(alert.type)}</span>
@@ -374,7 +369,7 @@ export class StrategicRiskPanel extends Panel {
                 <div class="risk-alert-time">${this.formatTime(alert.timestamp)}</div>
               </div>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </div>
     `;

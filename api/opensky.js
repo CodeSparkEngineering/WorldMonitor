@@ -1,8 +1,14 @@
 // OpenSky Network API proxy - v3
 // Note: OpenSky seems to block some cloud provider IPs
+import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
+
 export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
+  const cors = getCorsHeaders(req);
+  if (isDisallowedOrigin(req)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), { status: 403, headers: cors });
+  }
   const url = new URL(req.url);
 
   // Build OpenSky API URL with bounding box params
@@ -29,7 +35,7 @@ export default async function handler(req) {
     if (response.status === 429) {
       return Response.json({ error: 'Rate limited', time: Date.now(), states: null }, {
         status: 429,
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: cors,
       });
     }
 
@@ -42,7 +48,7 @@ export default async function handler(req) {
         states: null
       }, {
         status: response.status,
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: cors,
       });
     }
 
@@ -50,7 +56,7 @@ export default async function handler(req) {
     return Response.json(data, {
       status: response.status,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        ...cors,
         'Cache-Control': 'public, max-age=30, s-maxage=30, stale-while-revalidate=15',
       },
     });
@@ -61,7 +67,7 @@ export default async function handler(req) {
       states: null
     }, {
       status: 500,
-      headers: { 'Access-Control-Allow-Origin': '*' },
+      headers: cors,
     });
   }
 }

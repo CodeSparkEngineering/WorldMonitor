@@ -4,7 +4,7 @@
  */
 import { isMobileDevice } from '@/utils';
 import { MapComponent } from './Map';
-import { DeckGLMap, type DeckMapView } from './DeckGLMap';
+import { DeckGLMap, type DeckMapView, type CountryClickPayload } from './DeckGLMap';
 import type {
   MapLayers,
   Hotspot,
@@ -27,6 +27,7 @@ import type {
   UcdpGeoEvent,
   DisplacementFlow,
   ClimateAnomaly,
+  CyberThreat,
 } from '@/types';
 import type { WeatherAlert } from '@/services/weather';
 
@@ -289,7 +290,15 @@ export class MapContainer {
     }
   }
 
-  public setNewsLocations(data: Array<{ lat: number; lon: number; title: string; threatLevel: string }>): void {
+  public setCyberThreats(threats: CyberThreat[]): void {
+    if (this.useDeckGL) {
+      this.deckGLMap?.setCyberThreats(threats);
+    } else {
+      this.svgMap?.setCyberThreats(threats);
+    }
+  }
+
+  public setNewsLocations(data: Array<{ lat: number; lon: number; title: string; threatLevel: string; timestamp?: Date }>): void {
     if (this.useDeckGL) {
       this.deckGLMap?.setNewsLocations(data);
     } else {
@@ -500,7 +509,7 @@ export class MapContainer {
   }
 
   // Country click + highlight (deck.gl only)
-  public onCountryClicked(callback: (lat: number, lon: number) => void): void {
+  public onCountryClicked(callback: (country: CountryClickPayload) => void): void {
     if (this.useDeckGL) {
       this.deckGLMap?.setOnCountryClick(callback);
     }

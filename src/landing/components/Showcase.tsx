@@ -10,7 +10,7 @@ export default function Showcase() {
     return (
         <section className="py-32 bg-zinc-950 relative overflow-hidden">
             {/* Background Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/20 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-electric-500/20 blur-[120px] rounded-full pointer-events-none" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="text-center mb-16">
@@ -21,7 +21,7 @@ export default function Showcase() {
                         transition={{ duration: 0.6 }}
                     >
                         <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-                            {t('showcase.title_prefix')} <span className="text-indigo-400">{t('showcase.title_suffix')}</span>
+                            {t('showcase.title_prefix')} <span className="text-electric-400">{t('showcase.title_suffix')}</span>
                         </h2>
                         <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
                             {t('showcase.description')}
@@ -67,7 +67,7 @@ export default function Showcase() {
                     </div>
 
                     {/* Decorative Elements */}
-                    <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl blur opacity-20 -z-10 group-hover:opacity-30 transition-opacity duration-500" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-electric-500 via-blue-500 to-cyan-500 rounded-xl blur opacity-20 -z-10 group-hover:opacity-30 transition-opacity duration-500" />
                 </motion.div>
             </div>
         </section>

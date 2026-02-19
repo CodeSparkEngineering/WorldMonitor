@@ -7,11 +7,15 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::env;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 
 use keyring::Entry;
+use reqwest::Url;
+use serde::Serialize;
 use serde_json::{Map, Value};
 use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
-use tauri::{AppHandle, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, RunEvent, WindowEvent, WebviewUrl, WebviewWindowBuilder};
 
 const LOCAL_API_PORT: &str = "46123";
 const KEYRING_SERVICE: &str = "world-monitor";
@@ -20,13 +24,16 @@ const DESKTOP_LOG_FILE: &str = "desktop.log";
 const MENU_FILE_SETTINGS_ID: &str = "file.settings";
 const MENU_HELP_GITHUB_ID: &str = "help.github";
 const MENU_HELP_DEVTOOLS_ID: &str = "help.devtools";
-const SUPPORTED_SECRET_KEYS: [&str; 15] = [
+const SUPPORTED_SECRET_KEYS: [&str; 18] = [
     "GROQ_API_KEY",
     "OPENROUTER_API_KEY",
     "FRED_API_KEY",
     "EIA_API_KEY",
     "CLOUDFLARE_API_TOKEN",
     "ACLED_ACCESS_TOKEN",
+    "URLHAUS_AUTH_KEY",
+    "OTX_API_KEY",
+    "ABUSEIPDB_API_KEY",
     "WINGBITS_API_KEY",
     "WS_RELAY_URL",
     "VITE_OPENSKY_RELAY_URL",
@@ -42,6 +49,12 @@ const SUPPORTED_SECRET_KEYS: [&str; 15] = [
 struct LocalApiState {
     child: Mutex<Option<Child>>,
     token: Mutex<Option<String>>,
+}
+
+#[derive(Serialize)]
+struct DesktopRuntimeInfo {
+    os: String,
+    arch: String,
 }
 
 fn secret_entry(key: &str) -> Result<Entry, String> {
@@ -78,6 +91,14 @@ fn get_local_api_token(state: tauri::State<'_, LocalApiState>) -> Result<String,
 }
 
 #[tauri::command]
+fn get_desktop_runtime_info() -> DesktopRuntimeInfo {
+    DesktopRuntimeInfo {
+        os: env::consts::OS.to_string(),
+        arch: env::consts::ARCH.to_string(),
+    }
+}
+
+#[tauri::command]
 fn list_supported_secret_keys() -> Vec<String> {
     SUPPORTED_SECRET_KEYS.iter().map(|key| (*key).to_string()).collect()
 }
@@ -90,6 +111,21 @@ fn get_secret(key: String) -> Result<Option<String>, String> {
         Err(keyring::Error::NoEntry) => Ok(None),
         Err(err) => Err(format!("Failed to read keyring secret: {err}")),
     }
+}
+
+#[tauri::command]
+fn get_all_secrets() -> std::collections::HashMap<String, String> {
+    let mut result = std::collections::HashMap::new();
+    for key in SUPPORTED_SECRET_KEYS.iter() {
+        if let Ok(entry) = Entry::new(KEYRING_SERVICE, key) {
+            if let Ok(value) = entry.get_password() {
+                if !value.trim().is_empty() {
+                    result.insert((*key).to_string(), value.trim().to_string());
+                }
+            }
+        }
+    }
+    result
 }
 
 #[tauri::command]
@@ -230,10 +266,16 @@ fn open_path_in_shell(path: &Path) -> Result<(), String> {
 
 #[tauri::command]
 fn open_url(url: String) -> Result<(), String> {
-    if !url.starts_with("https://") && !url.starts_with("http://") {
-        return Err("Only http/https URLs are allowed".to_string());
+    let parsed = Url::parse(&url).map_err(|_| "Invalid URL".to_string())?;
+
+    match parsed.scheme() {
+        "https" => open_in_shell(parsed.as_str()),
+        "http" => match parsed.host_str() {
+            Some("localhost") | Some("127.0.0.1") => open_in_shell(parsed.as_str()),
+            _ => Err("Only https:// URLs are allowed (http:// only for localhost)".to_string()),
+        },
+        _ => Err("Only https:// URLs are allowed (http:// only for localhost)".to_string()),
     }
-    open_in_shell(&url)
 }
 
 fn open_logs_folder_impl(app: &AppHandle) -> Result<PathBuf, String> {
@@ -372,7 +414,18 @@ fn build_app_menu(handle: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
         &[&about_item, &help_separator, &github_item, &devtools_item],
     )?;
 
-    Menu::with_items(handle, &[&file_menu, &help_menu])
+    let edit_menu = {
+        let undo = PredefinedMenuItem::undo(handle, None)?;
+        let redo = PredefinedMenuItem::redo(handle, None)?;
+        let sep1 = PredefinedMenuItem::separator(handle)?;
+        let cut = PredefinedMenuItem::cut(handle, None)?;
+        let copy = PredefinedMenuItem::copy(handle, None)?;
+        let paste = PredefinedMenuItem::paste(handle, None)?;
+        let select_all = PredefinedMenuItem::select_all(handle, None)?;
+        Submenu::with_items(handle, "Edit", true, &[&undo, &redo, &sep1, &cut, &copy, &paste, &select_all])?
+    };
+
+    Menu::with_items(handle, &[&file_menu, &edit_menu, &help_menu])
 }
 
 fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
@@ -396,6 +449,53 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
             }
         }
         _ => {}
+    }
+}
+
+/// Strip Windows extended-length path prefixes that `canonicalize()` adds.
+/// Preserve UNC semantics: `\\?\UNC\server\share\...` must become
+/// `\\server\share\...` (not `UNC\server\share\...`).
+fn sanitize_path_for_node(p: &Path) -> String {
+    let s = p.to_string_lossy();
+    if let Some(stripped_unc) = s.strip_prefix("\\\\?\\UNC\\") {
+        format!("\\\\{stripped_unc}")
+    } else if let Some(stripped) = s.strip_prefix("\\\\?\\") {
+        stripped.to_string()
+    } else {
+        s.into_owned()
+    }
+}
+
+#[cfg(test)]
+mod sanitize_path_tests {
+    use super::sanitize_path_for_node;
+    use std::path::Path;
+
+    #[test]
+    fn strips_extended_drive_prefix() {
+        let raw = Path::new(r"\\?\C:\Program Files\nodejs\node.exe");
+        assert_eq!(
+            sanitize_path_for_node(raw),
+            r"C:\Program Files\nodejs\node.exe".to_string()
+        );
+    }
+
+    #[test]
+    fn strips_extended_unc_prefix_and_preserves_unc_root() {
+        let raw = Path::new(r"\\?\UNC\server\share\sidecar\local-api-server.mjs");
+        assert_eq!(
+            sanitize_path_for_node(raw),
+            r"\\server\share\sidecar\local-api-server.mjs".to_string()
+        );
+    }
+
+    #[test]
+    fn leaves_standard_paths_unchanged() {
+        let raw = Path::new(r"C:\Users\alice\sidecar\local-api-server.mjs");
+        assert_eq!(
+            sanitize_path_for_node(raw),
+            r"C:\Users\alice\sidecar\local-api-server.mjs".to_string()
+        );
     }
 }
 
@@ -432,11 +532,29 @@ fn local_api_paths(app: &AppHandle) -> (PathBuf, PathBuf) {
     (sidecar_script, api_dir_root)
 }
 
-fn resolve_node_binary() -> Option<PathBuf> {
+fn resolve_node_binary(app: &AppHandle) -> Option<PathBuf> {
     if let Ok(explicit) = env::var("LOCAL_API_NODE_BIN") {
         let explicit_path = PathBuf::from(explicit);
-        if explicit_path.exists() {
+        if explicit_path.is_file() {
             return Some(explicit_path);
+        }
+        append_desktop_log(
+            app,
+            "WARN",
+            &format!(
+                "LOCAL_API_NODE_BIN is set but not a valid file: {}",
+                explicit_path.display()
+            ),
+        );
+    }
+
+    if !cfg!(debug_assertions) {
+        let node_name = if cfg!(windows) { "node.exe" } else { "node" };
+        if let Ok(resource_dir) = app.path().resource_dir() {
+            let bundled = resource_dir.join("sidecar").join("node").join(node_name);
+            if bundled.is_file() {
+                return Some(bundled);
+            }
         }
     }
 
@@ -444,7 +562,7 @@ fn resolve_node_binary() -> Option<PathBuf> {
     if let Some(path_var) = env::var_os("PATH") {
         for dir in env::split_paths(&path_var) {
             let candidate = dir.join(node_name);
-            if candidate.exists() {
+            if candidate.is_file() {
                 return Some(candidate);
             }
         }
@@ -464,7 +582,7 @@ fn resolve_node_binary() -> Option<PathBuf> {
         ]
     };
 
-    common_locations.into_iter().find(|path| path.exists())
+    common_locations.into_iter().find(|path| path.is_file())
 }
 
 fn start_local_api(app: &AppHandle) -> Result<(), String> {
@@ -484,7 +602,7 @@ fn start_local_api(app: &AppHandle) -> Result<(), String> {
             script.display()
         ));
     }
-    let node_binary = resolve_node_binary().ok_or_else(|| {
+    let node_binary = resolve_node_binary(app).ok_or_else(|| {
         "Node.js executable not found. Install Node 18+ or set LOCAL_API_NODE_BIN".to_string()
     })?;
 
@@ -519,13 +637,24 @@ fn start_local_api(app: &AppHandle) -> Result<(), String> {
     drop(token_slot);
 
     let mut cmd = Command::new(&node_binary);
-    cmd.arg(&script)
+    #[cfg(windows)]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW — hide the node.exe console
+    // Sanitize paths for Node.js on Windows: strip \\?\ UNC prefix and set
+    // explicit working directory to avoid bare drive-letter CWD issues that
+    // cause EISDIR errors in Node.js module resolution.
+    let script_for_node = sanitize_path_for_node(&script);
+    let resource_for_node = sanitize_path_for_node(&resource_root);
+    append_desktop_log(app, "INFO", &format!("node args: script={script_for_node} resource_dir={resource_for_node}"));
+    cmd.arg(&script_for_node)
         .env("LOCAL_API_PORT", LOCAL_API_PORT)
-        .env("LOCAL_API_RESOURCE_DIR", resource_root)
+        .env("LOCAL_API_RESOURCE_DIR", &resource_for_node)
         .env("LOCAL_API_MODE", "tauri-sidecar")
         .env("LOCAL_API_TOKEN", &local_api_token)
         .stdout(Stdio::from(log_file))
         .stderr(Stdio::from(log_file_err));
+    if let Some(parent) = script.parent() {
+        cmd.current_dir(parent);
+    }
 
     // Pass keychain secrets to sidecar as env vars
     let mut secret_count = 0u32;
@@ -568,9 +697,11 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             list_supported_secret_keys,
             get_secret,
+            get_all_secrets,
             set_secret,
             delete_secret,
             get_local_api_token,
+            get_desktop_runtime_info,
             read_cache_entry,
             write_cache_entry,
             open_logs_folder,
@@ -595,8 +726,42 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("error while running world-monitor tauri application")
         .run(|app, event| {
-            if matches!(event, RunEvent::ExitRequested { .. } | RunEvent::Exit) {
-                stop_local_api(&app);
+            match &event {
+                // macOS: hide window on close instead of quitting (standard behavior)
+                #[cfg(target_os = "macos")]
+                RunEvent::WindowEvent {
+                    label,
+                    event: WindowEvent::CloseRequested { api, .. },
+                    ..
+                } if label == "main" => {
+                    api.prevent_close();
+                    if let Some(w) = app.get_webview_window("main") {
+                        let _ = w.hide();
+                    }
+                }
+                // macOS: reshow window when dock icon is clicked
+                #[cfg(target_os = "macos")]
+                RunEvent::Reopen { .. } => {
+                    if let Some(w) = app.get_webview_window("main") {
+                        let _ = w.show();
+                        let _ = w.set_focus();
+                    }
+                }
+                // Raise settings window when main window gains focus so it doesn't hide behind
+                RunEvent::WindowEvent {
+                    label,
+                    event: WindowEvent::Focused(true),
+                    ..
+                } if label == "main" => {
+                    if let Some(sw) = app.get_webview_window("settings") {
+                        let _ = sw.show();
+                        let _ = sw.set_focus();
+                    }
+                }
+                RunEvent::ExitRequested { .. } | RunEvent::Exit => {
+                    stop_local_api(app);
+                }
+                _ => {}
             }
         });
 }

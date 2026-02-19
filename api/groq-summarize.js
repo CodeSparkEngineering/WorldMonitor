@@ -6,6 +6,7 @@
  */
 
 import { getCachedJson, setCachedJson, hashString } from './_upstash-cache.js';
+import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
 
 export const config = {
   runtime: 'edge',
@@ -17,11 +18,19 @@ const CACHE_TTL_SECONDS = 86400; // 24 hours
 
 const CACHE_VERSION = 'v3';
 
-function getCacheKey(headlines, mode, geoContext = '', variant = 'full') {
+function getCacheKey(headlines, mode, geoContext = '', variant = 'full', lang = 'en') {
   const sorted = headlines.slice(0, 8).sort().join('|');
   const geoHash = geoContext ? ':g' + hashString(geoContext).slice(0, 6) : '';
   const hash = hashString(`${mode}:${sorted}`);
-  return `summary:${CACHE_VERSION}:${variant}:${hash}${geoHash}`;
+  const normalizedVariant = typeof variant === 'string' && variant ? variant.toLowerCase() : 'full';
+  const normalizedLang = typeof lang === 'string' && lang ? lang.toLowerCase() : 'en';
+
+  if (mode === 'translate') {
+    const targetLang = normalizedVariant || normalizedLang;
+    return `summary:${CACHE_VERSION}:${mode}:${targetLang}:${hash}${geoHash}`;
+  }
+
+  return `summary:${CACHE_VERSION}:${mode}:${normalizedVariant}:${normalizedLang}:${hash}${geoHash}`;
 }
 
 // Deduplicate similar headlines (same story from different sources)
@@ -60,10 +69,22 @@ function deduplicateHeadlines(headlines) {
 }
 
 export default async function handler(request) {
-  // Only allow POST
+  const corsHeaders = getCorsHeaders(request, 'POST, OPTIONS');
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (isDisallowedOrigin(request)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
+      status: 403,
       headers: { 'Content-Type': 'application/json' },
     });
   }
@@ -78,13 +99,20 @@ export default async function handler(request) {
     });
   }
 
+  const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+  if (contentLength > 51200) {
+    return new Response(JSON.stringify({ error: 'Payload too large' }), {
+      status: 413,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   // Override config if using Grok (xAI)
   const apiUrl = isGrok ? 'https://api.x.ai/v1/chat/completions' : GROQ_API_URL;
   const model = isGrok ? 'grok-4-latest' : MODEL;
 
-
   try {
-    const { headlines, mode = 'brief', geoContext = '', variant = 'full' } = await request.json();
+    const { headlines, mode = 'brief', geoContext = '', variant = 'full', lang = 'en' } = await request.json();
 
     if (!headlines || !Array.isArray(headlines) || headlines.length === 0) {
       return new Response(JSON.stringify({ error: 'Headlines array required' }), {
@@ -94,7 +122,7 @@ export default async function handler(request) {
     }
 
     // Check cache first
-    const cacheKey = getCacheKey(headlines, mode, geoContext, variant);
+    const cacheKey = getCacheKey(headlines, mode, geoContext, variant, lang);
     const cached = await getCachedJson(cacheKey);
     if (cached && typeof cached === 'object' && cached.summary) {
       console.log('[Groq] Cache hit:', cacheKey);
@@ -122,6 +150,9 @@ export default async function handler(request) {
     const isTechVariant = variant === 'tech';
     const dateContext = `Current date: ${new Date().toISOString().split('T')[0]}.${isTechVariant ? '' : ' Donald Trump is the current US President (second term, inaugurated Jan 2025).'}`;
 
+    // Language instruction
+    const langInstruction = lang && lang !== 'en' ? `\nIMPORTANT: Output the summary in ${lang.toUpperCase()} language.` : '';
+
     if (mode === 'brief') {
       if (isTechVariant) {
         // Tech variant: focus on startups, AI, funding, product launches
@@ -133,7 +164,7 @@ Rules:
 - IGNORE political news, trade policy, tariffs, government actions unless directly about tech regulation
 - Lead with the company/product/technology name
 - Start directly: "OpenAI announced...", "A new $50M Series B...", "GitHub released..."
-- No bullet points, no meta-commentary`;
+- No bullet points, no meta-commentary${langInstruction}`;
       } else {
         // Full variant: geopolitical focus
         systemPrompt = `${dateContext}
@@ -145,7 +176,7 @@ Rules:
 - Start directly with the subject: "Iran's regime...", "The US Treasury...", "Protests in..."
 - CRITICAL FOCAL POINTS are the main actors - mention them by name
 - If focal points show news + signals convergence, that's the lead
-- No bullet points, no meta-commentary`;
+- No bullet points, no meta-commentary${langInstruction}`;
       }
       userPrompt = `Summarize the top story:\n${headlineText}${intelSection}`;
     } else if (mode === 'analysis') {
@@ -173,10 +204,19 @@ Rules:
       userPrompt = isTechVariant
         ? `What's the key tech trend or development?\n${headlineText}${intelSection}`
         : `What's the key pattern or risk?\n${headlineText}${intelSection}`;
+    } else if (mode === 'translate') {
+      const targetLang = variant; // In translate mode, variant param holds the target language code (e.g., 'fr', 'es')
+      systemPrompt = `You are a professional news translator. Translate the following news headlines/summaries into ${targetLang}.
+Rules:
+- Maintain the original tone and journalistic style.
+- Do NOT add any conversational filler (e.g., "Here is the translation").
+- Output ONLY the translated text.
+- If the text is already in ${targetLang}, return it as is.`;
+      userPrompt = `Translate to ${targetLang}:\n${headlines[0]}`;
     } else {
       systemPrompt = isTechVariant
-        ? `${dateContext}\n\nSynthesize tech news in 2 sentences. Focus on startups, AI, funding, products. Ignore politics unless directly about tech regulation.`
-        : `${dateContext}\n\nSynthesize in 2 sentences max. Lead with substance. NEVER start with "Breaking news" or "Tonight" - just state the insight directly. CRITICAL focal points with news-signal convergence are significant.`;
+        ? `${dateContext}\n\nSynthesize tech news in 2 sentences. Focus on startups, AI, funding, products. Ignore politics unless directly about tech regulation.${langInstruction}`
+        : `${dateContext}\n\nSynthesize in 2 sentences max. Lead with substance. NEVER start with "Breaking news" or "Tonight" - just state the insight directly. CRITICAL focal points with news-signal convergence are significant.${langInstruction}`;
       userPrompt = `Key takeaway:\n${headlineText}${intelSection}`;
     }
 
@@ -242,6 +282,7 @@ Rules:
     }), {
       status: 200,
       headers: {
+        ...corsHeaders,
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=1800, s-maxage=1800, stale-while-revalidate=300',
       },

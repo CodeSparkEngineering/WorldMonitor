@@ -1,3 +1,4 @@
+import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
 export const config = { runtime: 'edge' };
 
 // Major tech services and their status page endpoints
@@ -248,6 +249,10 @@ async function checkStatusPage(service) {
 }
 
 export default async function handler(req) {
+  const cors = getCorsHeaders(req);
+  if (isDisallowedOrigin(req)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), { status: 403, headers: cors });
+  }
   const url = new URL(req.url);
   const category = url.searchParams.get('category'); // cloud, dev, comm, ai, saas, or all
 
@@ -284,7 +289,7 @@ export default async function handler(req) {
   }), {
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      ...cors,
       'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=30', // 1 min cache
     },
   });

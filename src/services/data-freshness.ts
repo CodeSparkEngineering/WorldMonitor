@@ -4,6 +4,8 @@
  * showing misleading "all clear" when we actually have no data.
  */
 
+import { getCSSColor } from '@/utils';
+
 export type DataSourceId =
   | 'acled'      // Protests/conflicts
   | 'opensky'    // Military flights
@@ -14,6 +16,7 @@ export type DataSourceId =
   | 'rss'        // RSS feeds
   | 'polymarket' // Prediction markets
   | 'outages'    // Internet outages
+  | 'cyber_threats' // Cyber threat IOC layer
   | 'weather'    // Weather alerts
   | 'economic'   // Economic indicators (FRED)
   | 'oil'        // EIA oil analytics
@@ -71,6 +74,7 @@ const SOURCE_METADATA: Record<DataSourceId, { name: string; requiredForRisk: boo
   rss: { name: 'Live News Feeds', requiredForRisk: true, panelId: 'live-news' },
   polymarket: { name: 'Prediction Markets', requiredForRisk: false, panelId: 'polymarket' },
   outages: { name: 'Internet Outages', requiredForRisk: false, panelId: 'outages' },
+  cyber_threats: { name: 'Cyber Threat IOCs', requiredForRisk: false, panelId: 'map' },
   weather: { name: 'Weather Alerts', requiredForRisk: false, panelId: 'weather' },
   economic: { name: 'Economic Data (FRED)', requiredForRisk: false, panelId: 'economic' },
   oil: { name: 'Oil Analytics (EIA)', requiredForRisk: false, panelId: 'economic' },
@@ -289,12 +293,12 @@ export const dataFreshness = new DataFreshnessTracker();
 // Helper to get status color
 export function getStatusColor(status: FreshnessStatus): string {
   switch (status) {
-    case 'fresh': return '#44aa44';
-    case 'stale': return '#ffaa00';
-    case 'very_stale': return '#ff8800';
-    case 'error': return '#ff4444';
-    case 'disabled': return '#666666';
-    case 'no_data': return '#888888';
+    case 'fresh': return getCSSColor('--semantic-normal');
+    case 'stale': return getCSSColor('--semantic-elevated');
+    case 'very_stale': return getCSSColor('--semantic-high');
+    case 'error': return getCSSColor('--semantic-critical');
+    case 'disabled': return getCSSColor('--text-muted');
+    case 'no_data': return getCSSColor('--text-dim');
   }
 }
 
@@ -321,6 +325,7 @@ const INTELLIGENCE_GAP_MESSAGES: Record<DataSourceId, string> = {
   rss: 'Breaking news may be missed—RSS feeds not updating',
   polymarket: 'Prediction market signals unavailable—early warning capability degraded',
   outages: 'Internet disruptions may be unreported—outage monitoring offline',
+  cyber_threats: 'Cyber IOC map points unavailable—malicious infrastructure visibility reduced',
   weather: 'Severe weather warnings may be missed—weather alerts unavailable',
   economic: 'Economic indicators stale—Fed/Treasury data not updating',
   oil: 'Oil market analytics unavailable—EIA data not updating',

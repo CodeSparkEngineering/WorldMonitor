@@ -1,5 +1,7 @@
 export const config = { runtime: 'edge' };
 
+import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
+
 // Fetch Hacker News front page stories
 // Uses official HackerNews Firebase API
 const ALLOWED_STORY_TYPES = new Set(['top', 'new', 'best', 'ask', 'show', 'job']);
@@ -14,6 +16,10 @@ function parseLimit(rawLimit) {
 }
 
 export default async function handler(request) {
+  const cors = getCorsHeaders(request);
+  if (isDisallowedOrigin(request)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), { status: 403, headers: cors });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const requestedType = searchParams.get('type') || 'top';
@@ -70,7 +76,7 @@ export default async function handler(request) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...cors,
         'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60', // 5 min cache
       },
     });
@@ -84,7 +90,7 @@ export default async function handler(request) {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          ...cors,
         },
       }
     );

@@ -1,10 +1,92 @@
 #!/usr/bin/env node
-import { createServer } from 'node:http';
+import http, { createServer } from 'node:http';
+import https from 'node:https';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+// Monkey-patch globalThis.fetch to force IPv4 for HTTPS requests.
+// Node.js built-in fetch (undici) tries IPv6 first via Happy Eyeballs.
+// Government APIs (EIA, NASA FIRMS, FRED) publish AAAA records but their
+// IPv6 endpoints time out, causing ETIMEDOUT. This override ensures ALL
+// fetch() calls in dynamically-loaded handler modules (api/*.js) use IPv4.
+const _originalFetch = globalThis.fetch;
+
+function normalizeRequestBody(body) {
+  if (body == null) return null;
+  if (typeof body === 'string' || Buffer.isBuffer(body) || body instanceof Uint8Array) return body;
+  if (body instanceof URLSearchParams) return body.toString();
+  if (ArrayBuffer.isView(body)) return Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+  if (body instanceof ArrayBuffer) return Buffer.from(body);
+  return body;
+}
+
+function buildSafeResponse(statusCode, statusText, headers, bodyBuffer) {
+  const status = Number.isInteger(statusCode) ? statusCode : 500;
+  const body = (status === 204 || status === 205 || status === 304) ? null : bodyBuffer;
+  return new Response(body, { status, statusText, headers });
+}
+
+function isTransientVerificationError(error) {
+  if (!(error instanceof Error)) return false;
+  const code = typeof error.code === 'string' ? error.code : '';
+  if (code && ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ENOTFOUND', 'UND_ERR_CONNECT_TIMEOUT'].includes(code)) {
+    return true;
+  }
+  if (error.name === 'AbortError') return true;
+  return /timed out|timeout|network|fetch failed|failed to fetch|socket hang up/i.test(error.message);
+}
+
+globalThis.fetch = function ipv4Fetch(input, init) {
+  const isRequest = input && typeof input === 'object' && 'url' in input;
+  let url;
+  try { url = new URL(typeof input === 'string' ? input : input.url); } catch { return _originalFetch(input, init); }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return _originalFetch(input, init);
+  const mod = url.protocol === 'https:' ? https : http;
+  const method = init?.method || (isRequest ? input.method : 'GET');
+  const headers = {};
+  const rawHeaders = init?.headers || (isRequest ? input.headers : null);
+  if (rawHeaders) {
+    const h = rawHeaders instanceof Headers ? Object.fromEntries(rawHeaders.entries())
+      : Array.isArray(rawHeaders) ? Object.fromEntries(rawHeaders) : rawHeaders;
+    Object.assign(headers, h);
+  }
+  return new Promise((resolve, reject) => {
+    const req = mod.request({ hostname: url.hostname, port: url.port || (url.protocol === 'https:' ? 443 : 80), path: url.pathname + url.search, method, headers, family: 4 }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        const buf = Buffer.concat(chunks);
+        const responseHeaders = new Headers();
+        for (const [k, v] of Object.entries(res.headers)) {
+          if (v) responseHeaders.set(k, Array.isArray(v) ? v.join(', ') : v);
+        }
+        try {
+          resolve(buildSafeResponse(res.statusCode, res.statusMessage, responseHeaders, buf));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+    req.on('error', reject);
+    if (init?.signal) { init.signal.addEventListener('abort', () => req.destroy()); }
+    if (init?.body) {
+      const body = normalizeRequestBody(init.body);
+      if (body != null) req.write(body);
+    }
+    req.end();
+  });
+};
+
+const ALLOWED_ENV_KEYS = new Set([
+  'GROQ_API_KEY', 'OPENROUTER_API_KEY', 'FRED_API_KEY', 'EIA_API_KEY',
+  'CLOUDFLARE_API_TOKEN', 'ACLED_ACCESS_TOKEN', 'URLHAUS_AUTH_KEY',
+  'OTX_API_KEY', 'ABUSEIPDB_API_KEY', 'WINGBITS_API_KEY', 'WS_RELAY_URL',
+  'VITE_OPENSKY_RELAY_URL', 'OPENSKY_CLIENT_ID', 'OPENSKY_CLIENT_SECRET',
+  'AISSTREAM_API_KEY', 'VITE_WS_RELAY_URL', 'FINNHUB_API_KEY', 'NASA_FIRMS_API_KEY',
+]);
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -282,31 +364,328 @@ async function tryCloudFallback(requestUrl, req, context, reason) {
   }
 }
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Max-Age': '86400',
-};
+const SIDECAR_ALLOWED_ORIGINS = [
+  /^tauri:\/\/localhost$/,
+  /^https?:\/\/localhost(:\d+)?$/,
+  /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+  /^https:\/\/tauri\.localhost(:\d+)?$/,
+  /^https:\/\/(.*\.)?worldmonitor\.app$/,
+];
+
+function getSidecarCorsOrigin(req) {
+  const origin = req.headers?.origin || req.headers?.get?.('origin') || '';
+  if (origin && SIDECAR_ALLOWED_ORIGINS.some(p => p.test(origin))) return origin;
+  return 'tauri://localhost';
+}
+
+function makeCorsHeaders(req) {
+  return {
+    'Access-Control-Allow-Origin': getSidecarCorsOrigin(req),
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
+  };
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  // Use node:https with IPv4 forced — Node.js built-in fetch (undici) tries IPv6
+  // first and some servers (EIA, NASA FIRMS) have broken IPv6 causing ETIMEDOUT.
+  const u = new URL(url);
+  if (u.protocol === 'https:') {
+    return new Promise((resolve, reject) => {
+      const reqOpts = {
+        hostname: u.hostname,
+        port: u.port || 443,
+        path: u.pathname + u.search,
+        method: options.method || 'GET',
+        headers: options.headers || {},
+        family: 4,
+      };
+      const req = https.request(reqOpts, (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => {
+          const body = Buffer.concat(chunks).toString();
+          resolve({
+            ok: res.statusCode >= 200 && res.statusCode < 300,
+            status: res.statusCode,
+            headers: { get: (k) => res.headers[k.toLowerCase()] || null },
+            text: () => Promise.resolve(body),
+            json: () => Promise.resolve(JSON.parse(body)),
+          });
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(timeoutMs, () => { req.destroy(new Error('Request timed out')); });
+      if (options.body) {
+        const body = normalizeRequestBody(options.body);
+        if (body != null) req.write(body);
+      }
+      req.end();
+    });
+  }
+  // HTTP fallback (localhost sidecar, etc.)
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function relayToHttpUrl(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol === 'ws:') parsed.protocol = 'http:';
+    if (parsed.protocol === 'wss:') parsed.protocol = 'https:';
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return null;
+  }
+}
+
+function isAuthFailure(status, text = '') {
+  if (status === 401 || status === 403) return true;
+  return /unauthori[sz]ed|forbidden|invalid api key|invalid token|bad credentials/i.test(text);
+}
+
+async function validateSecretAgainstProvider(key, rawValue, context = {}) {
+  const value = String(rawValue || '').trim();
+  if (!value) return { valid: false, message: 'Value is required' };
+
+  const fail = (message) => ({ valid: false, message });
+  const ok = (message) => ({ valid: true, message });
+
+  try {
+    switch (key) {
+    case 'GROQ_API_KEY': {
+      const response = await fetchWithTimeout('https://api.groq.com/openai/v1/models', {
+        headers: { Authorization: `Bearer ${value}` },
+      });
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('Groq rejected this key');
+      if (!response.ok) return fail(`Groq probe failed (${response.status})`);
+      return ok('Groq key verified');
+    }
+
+    case 'OPENROUTER_API_KEY': {
+      const response = await fetchWithTimeout('https://openrouter.ai/api/v1/models', {
+        headers: { Authorization: `Bearer ${value}` },
+      });
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('OpenRouter rejected this key');
+      if (!response.ok) return fail(`OpenRouter probe failed (${response.status})`);
+      return ok('OpenRouter key verified');
+    }
+
+    case 'FRED_API_KEY': {
+      const response = await fetchWithTimeout(
+        `https://api.stlouisfed.org/fred/series?series_id=GDP&api_key=${encodeURIComponent(value)}&file_type=json`,
+        { headers: { Accept: 'application/json' } }
+      );
+      const text = await response.text();
+      if (!response.ok) return fail(`FRED probe failed (${response.status})`);
+      let payload = null;
+      try { payload = JSON.parse(text); } catch { /* ignore */ }
+      if (payload?.error_code || payload?.error_message) return fail('FRED rejected this key');
+      if (!Array.isArray(payload?.seriess)) return fail('Unexpected FRED response');
+      return ok('FRED key verified');
+    }
+
+    case 'EIA_API_KEY': {
+      const response = await fetchWithTimeout(
+        `https://api.eia.gov/v2/?api_key=${encodeURIComponent(value)}`,
+        { headers: { Accept: 'application/json' } }
+      );
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('EIA rejected this key');
+      if (!response.ok) return fail(`EIA probe failed (${response.status})`);
+      let payload = null;
+      try { payload = JSON.parse(text); } catch { /* ignore */ }
+      if (payload?.response?.id === undefined && !payload?.response?.routes) return fail('Unexpected EIA response');
+      return ok('EIA key verified');
+    }
+
+    case 'CLOUDFLARE_API_TOKEN': {
+      const response = await fetchWithTimeout(
+        'https://api.cloudflare.com/client/v4/radar/annotations/outages?dateRange=1d&limit=1',
+        { headers: { Authorization: `Bearer ${value}` } }
+      );
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('Cloudflare rejected this token');
+      if (!response.ok) return fail(`Cloudflare probe failed (${response.status})`);
+      let payload = null;
+      try { payload = JSON.parse(text); } catch { /* ignore */ }
+      if (payload?.success !== true) return fail('Cloudflare Radar API did not return success');
+      return ok('Cloudflare token verified');
+    }
+
+    case 'ACLED_ACCESS_TOKEN': {
+      const response = await fetchWithTimeout('https://acleddata.com/api/acled/read?_format=json&limit=1', {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${value}`,
+        },
+      });
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('ACLED rejected this token');
+      if (!response.ok) return fail(`ACLED probe failed (${response.status})`);
+      return ok('ACLED token verified');
+    }
+
+    case 'URLHAUS_AUTH_KEY': {
+      const response = await fetchWithTimeout('https://urlhaus-api.abuse.ch/v1/urls/recent/limit/1/', {
+        headers: {
+          Accept: 'application/json',
+          'Auth-Key': value,
+        },
+      });
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('URLhaus rejected this key');
+      if (!response.ok) return fail(`URLhaus probe failed (${response.status})`);
+      return ok('URLhaus key verified');
+    }
+
+    case 'OTX_API_KEY': {
+      const response = await fetchWithTimeout('https://otx.alienvault.com/api/v1/user/me', {
+        headers: {
+          Accept: 'application/json',
+          'X-OTX-API-KEY': value,
+        },
+      });
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('OTX rejected this key');
+      if (!response.ok) return fail(`OTX probe failed (${response.status})`);
+      return ok('OTX key verified');
+    }
+
+    case 'ABUSEIPDB_API_KEY': {
+      const response = await fetchWithTimeout('https://api.abuseipdb.com/api/v2/check?ipAddress=8.8.8.8&maxAgeInDays=90', {
+        headers: {
+          Accept: 'application/json',
+          Key: value,
+        },
+      });
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('AbuseIPDB rejected this key');
+      if (!response.ok) return fail(`AbuseIPDB probe failed (${response.status})`);
+      return ok('AbuseIPDB key verified');
+    }
+
+    case 'WINGBITS_API_KEY': {
+      const response = await fetchWithTimeout('https://customer-api.wingbits.com/v1/flights/details/3c6444', {
+        headers: {
+          Accept: 'application/json',
+          'x-api-key': value,
+        },
+      });
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('Wingbits rejected this key');
+      if (response.status >= 500) return fail(`Wingbits probe failed (${response.status})`);
+      return ok('Wingbits key accepted');
+    }
+
+    case 'FINNHUB_API_KEY': {
+      const response = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${encodeURIComponent(value)}`, {
+        headers: { Accept: 'application/json' },
+      });
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('Finnhub rejected this key');
+      if (response.status === 429) return ok('Finnhub key accepted (rate limited)');
+      if (!response.ok) return fail(`Finnhub probe failed (${response.status})`);
+      let payload = null;
+      try { payload = JSON.parse(text); } catch { /* ignore */ }
+      if (typeof payload?.error === 'string' && payload.error.toLowerCase().includes('invalid')) {
+        return fail('Finnhub rejected this key');
+      }
+      if (typeof payload?.c !== 'number') return fail('Unexpected Finnhub response');
+      return ok('Finnhub key verified');
+    }
+
+    case 'NASA_FIRMS_API_KEY': {
+      const response = await fetchWithTimeout(
+        `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${encodeURIComponent(value)}/VIIRS_SNPP_NRT/22,44,40,53/1`,
+        { headers: { Accept: 'text/csv' } }
+      );
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('NASA FIRMS rejected this key');
+      if (!response.ok) return fail(`NASA FIRMS probe failed (${response.status})`);
+      if (/invalid api key|not authorized|forbidden/i.test(text)) return fail('NASA FIRMS rejected this key');
+      return ok('NASA FIRMS key verified');
+    }
+
+    case 'WS_RELAY_URL':
+    case 'VITE_WS_RELAY_URL':
+    case 'VITE_OPENSKY_RELAY_URL': {
+      const probeUrl = relayToHttpUrl(value);
+      if (!probeUrl) return fail('Relay URL is invalid');
+      const response = await fetchWithTimeout(probeUrl, { method: 'GET' });
+      if (response.status >= 500) return fail(`Relay probe failed (${response.status})`);
+      return ok('Relay URL is reachable');
+    }
+
+    case 'OPENSKY_CLIENT_ID':
+    case 'OPENSKY_CLIENT_SECRET': {
+      const contextClientId = typeof context.OPENSKY_CLIENT_ID === 'string' ? context.OPENSKY_CLIENT_ID.trim() : '';
+      const contextClientSecret = typeof context.OPENSKY_CLIENT_SECRET === 'string' ? context.OPENSKY_CLIENT_SECRET.trim() : '';
+      const clientId = key === 'OPENSKY_CLIENT_ID'
+        ? value
+        : (contextClientId || String(process.env.OPENSKY_CLIENT_ID || '').trim());
+      const clientSecret = key === 'OPENSKY_CLIENT_SECRET'
+        ? value
+        : (contextClientSecret || String(process.env.OPENSKY_CLIENT_SECRET || '').trim());
+      if (!clientId || !clientSecret) {
+        return fail('Set both OPENSKY_CLIENT_ID and OPENSKY_CLIENT_SECRET before verification');
+      }
+      const body = new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+      });
+      const response = await fetchWithTimeout(
+        'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        }
+      );
+      const text = await response.text();
+      if (isAuthFailure(response.status, text)) return fail('OpenSky rejected these credentials');
+      if (!response.ok) return fail(`OpenSky auth probe failed (${response.status})`);
+      let payload = null;
+      try { payload = JSON.parse(text); } catch { /* ignore */ }
+      if (!payload?.access_token) return fail('OpenSky auth response did not include an access token');
+      return ok('OpenSky credentials verified');
+    }
+
+    case 'AISSTREAM_API_KEY':
+      return ok('AISSTREAM key stored (live verification not available in sidecar)');
+
+      default:
+        return ok('Key stored');
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'provider probe failed';
+    if (isTransientVerificationError(error)) {
+      return { valid: true, message: `Saved (could not verify: ${message})` };
+    }
+    return fail(`Verification request failed: ${message}`);
+  }
+}
 
 async function dispatch(requestUrl, req, routes, context) {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: makeCorsHeaders(req) });
   }
 
   if (requestUrl.pathname === '/api/service-status') {
     return handleLocalServiceStatus(context);
   }
 
-  const expectedToken = process.env.LOCAL_API_TOKEN;
-  if (expectedToken) {
-    const authHeader = req.headers.authorization || '';
-    if (authHeader !== `Bearer ${expectedToken}`) {
-      context.logger.warn(`[local-api] unauthorized request to ${requestUrl.pathname}`);
-      return json({ error: 'Unauthorized' }, 401);
-    }
-  }
-
+  // Localhost-only diagnostics — no token required
   if (requestUrl.pathname === '/api/local-status') {
     return json({
       success: true,
@@ -333,13 +712,23 @@ async function dispatch(requestUrl, req, routes, context) {
     }
     return json({ verboseMode });
   }
+  // Token auth — required for env mutations and all API handlers
+  const expectedToken = process.env.LOCAL_API_TOKEN;
+  if (expectedToken) {
+    const authHeader = req.headers.authorization || '';
+    if (authHeader !== `Bearer ${expectedToken}`) {
+      context.logger.warn(`[local-api] unauthorized request to ${requestUrl.pathname}`);
+      return json({ error: 'Unauthorized' }, 401);
+    }
+  }
+
   if (requestUrl.pathname === '/api/local-env-update') {
     if (req.method === 'POST') {
       const body = await readBody(req);
       if (body) {
         try {
           const { key, value } = JSON.parse(body.toString());
-          if (typeof key === 'string' && key.length > 0 && key.length < 100) {
+          if (typeof key === 'string' && key.length > 0 && ALLOWED_ENV_KEYS.has(key)) {
             if (value == null || value === '') {
               delete process.env[key];
               context.logger.log(`[local-api] env unset: ${key}`);
@@ -347,17 +736,36 @@ async function dispatch(requestUrl, req, routes, context) {
               process.env[key] = String(value);
               context.logger.log(`[local-api] env set: ${key}`);
             }
-            // Clear cached handler modules so they pick up new env on next call
             moduleCache.clear();
             failedImports.clear();
             cloudPreferred.clear();
             return json({ ok: true, key });
           }
+          return json({ error: 'key not in allowlist' }, 403);
         } catch { /* bad JSON */ }
       }
       return json({ error: 'expected { key, value }' }, 400);
     }
     return json({ error: 'POST required' }, 405);
+  }
+
+  if (requestUrl.pathname === '/api/local-validate-secret') {
+    if (req.method !== 'POST') {
+      return json({ error: 'POST required' }, 405);
+    }
+    const body = await readBody(req);
+    if (!body) return json({ error: 'expected { key, value }' }, 400);
+    try {
+      const { key, value, context } = JSON.parse(body.toString());
+      if (typeof key !== 'string' || !ALLOWED_ENV_KEYS.has(key)) {
+        return json({ error: 'key not in allowlist' }, 403);
+      }
+      const safeContext = (context && typeof context === 'object') ? context : {};
+      const result = await validateSecretAgainstProvider(key, value, safeContext);
+      return json(result, result.valid ? 200 : 422);
+    } catch {
+      return json({ error: 'expected { key, value }' }, 400);
+    }
   }
 
   if (context.cloudFallback && cloudPreferred.has(requestUrl.pathname)) {
@@ -429,20 +837,25 @@ export async function createLocalApiServer(options = {}) {
     const requestUrl = new URL(req.url || '/', `http://127.0.0.1:${context.port}`);
 
     if (!requestUrl.pathname.startsWith('/api/')) {
-      res.writeHead(404, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+      res.writeHead(404, { 'content-type': 'application/json', ...makeCorsHeaders(req) });
       res.end(JSON.stringify({ error: 'Not found' }));
       return;
     }
 
     const start = Date.now();
-    const skipRecord = requestUrl.pathname === '/api/local-traffic-log' || requestUrl.pathname === '/api/local-debug-toggle' || requestUrl.pathname === '/api/local-env-update';
+    const skipRecord = requestUrl.pathname === '/api/local-traffic-log'
+      || requestUrl.pathname === '/api/local-debug-toggle'
+      || requestUrl.pathname === '/api/local-env-update'
+      || requestUrl.pathname === '/api/local-validate-secret';
 
     try {
       const response = await dispatch(requestUrl, req, routes, context);
       const durationMs = Date.now() - start;
       let body = Buffer.from(await response.arrayBuffer());
       const headers = Object.fromEntries(response.headers.entries());
-      headers['access-control-allow-origin'] = '*';
+      const corsOrigin = getSidecarCorsOrigin(req);
+      headers['access-control-allow-origin'] = corsOrigin;
+      headers['vary'] = headers['vary'] ? headers['vary'] + ', Origin' : 'Origin';
 
       if (!skipRecord) {
         recordTraffic({
@@ -478,7 +891,7 @@ export async function createLocalApiServer(options = {}) {
         });
       }
 
-      res.writeHead(500, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+      res.writeHead(500, { 'content-type': 'application/json', ...makeCorsHeaders(req) });
       res.end(JSON.stringify({ error: 'Internal server error' }));
     }
   });

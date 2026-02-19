@@ -2,11 +2,12 @@ export type PropagandaRisk = 'low' | 'medium' | 'high';
 
 export interface Feed {
   name: string;
-  url: string;
+  url: string | Record<string, string>;
   type?: string;
   region?: string;
   propagandaRisk?: PropagandaRisk;
   stateAffiliated?: string;  // e.g., "Russia", "China", "Iran"
+  lang?: string;             // ISO 2-letter code for filtering
 }
 
 export type { ThreatClassification, ThreatLevel, EventCategory } from '@/services/threat-classifier';
@@ -23,6 +24,7 @@ export interface NewsItem {
   lat?: number;
   lon?: number;
   locationName?: string;
+  lang?: string;
 }
 
 export type VelocityLevel = 'normal' | 'elevated' | 'spike';
@@ -53,6 +55,7 @@ export interface ClusteredEvent {
   threat?: import('@/services/threat-classifier').ThreatClassification;
   lat?: number;
   lon?: number;
+  lang?: string;
 }
 
 export type AssetType = 'pipeline' | 'cable' | 'datacenter' | 'base' | 'nuclear';
@@ -194,6 +197,27 @@ export interface APTGroup {
   sponsor: string;
   lat: number;
   lon: number;
+}
+
+export type CyberThreatType = 'c2_server' | 'malware_host' | 'phishing' | 'malicious_url';
+export type CyberThreatSource = 'feodo' | 'urlhaus' | 'c2intel' | 'otx' | 'abuseipdb';
+export type CyberThreatSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type CyberThreatIndicatorType = 'ip' | 'domain' | 'url';
+
+export interface CyberThreat {
+  id: string;
+  type: CyberThreatType;
+  source: CyberThreatSource;
+  indicator: string;
+  indicatorType: CyberThreatIndicatorType;
+  lat: number;
+  lon: number;
+  country?: string;
+  severity: CyberThreatSeverity;
+  malwareFamily?: string;
+  tags: string[];
+  firstSeen?: string;
+  lastSeen?: string;
 }
 
 export interface ConflictZone {
@@ -504,6 +528,7 @@ export interface MapLayers {
   economic: boolean;
   waterways: boolean;
   outages: boolean;
+  cyberThreats: boolean;
   datacenters: boolean;
   protests: boolean;
   flights: boolean;
@@ -522,6 +547,13 @@ export interface MapLayers {
   accelerators: boolean;
   techHQs: boolean;
   techEvents: boolean;
+  // Finance variant layers
+  stockExchanges: boolean;
+  financialCenters: boolean;
+  centralBanks: boolean;
+  commodityHubs: boolean;
+  // Gulf FDI layers
+  gulfInvestments: boolean;
 }
 
 export interface AIDataCenter {
@@ -1137,6 +1169,71 @@ export interface FocalPointSummary {
   topCompanies: FocalPoint[];
 }
 
+// ============================================
+// GULF FDI TYPES
+// ============================================
+
+export type GulfInvestorCountry = 'SA' | 'UAE';
+
+export type GulfInvestmentSector =
+  | 'ports'
+  | 'pipelines'
+  | 'energy'
+  | 'datacenters'
+  | 'airports'
+  | 'railways'
+  | 'telecoms'
+  | 'water'
+  | 'logistics'
+  | 'mining'
+  | 'real-estate'
+  | 'manufacturing';
+
+export type GulfInvestmentStatus =
+  | 'operational'
+  | 'under-construction'
+  | 'announced'
+  | 'rumoured'
+  | 'cancelled'
+  | 'divested';
+
+export type GulfInvestingEntity =
+  | 'DP World'
+  | 'AD Ports'
+  | 'Mubadala'
+  | 'ADIA'
+  | 'ADNOC'
+  | 'Masdar'
+  | 'PIF'
+  | 'Saudi Aramco'
+  | 'ACWA Power'
+  | 'STC'
+  | 'Mawani'
+  | 'NEOM'
+  | 'Emirates Global Aluminium'
+  | 'Other';
+
+export interface GulfInvestment {
+  id: string;
+  investingEntity: GulfInvestingEntity;
+  investingCountry: GulfInvestorCountry;
+  targetCountry: string;
+  targetCountryIso: string;
+  sector: GulfInvestmentSector;
+  assetType: string;
+  assetName: string;
+  lat: number;
+  lon: number;
+  investmentUSD?: number;
+  stakePercent?: number;
+  status: GulfInvestmentStatus;
+  yearAnnounced?: number;
+  yearOperational?: number;
+  description: string;
+  sourceUrl?: string;
+  tags?: string[];
+}
+
 export interface MapProtestCluster {
   id: string;
   lat: number;
@@ -1146,7 +1243,12 @@ export interface MapProtestCluster {
   country: string;
   maxSeverity: 'low' | 'medium' | 'high';
   hasRiot: boolean;
+  latestRiotEventTimeMs?: number;
   totalFatalities: number;
+  riotCount?: number;
+  highSeverityCount?: number;
+  verifiedCount?: number;
+  sampled?: boolean;
 }
 
 export interface MapTechHQCluster {
@@ -1158,6 +1260,10 @@ export interface MapTechHQCluster {
   city: string;
   country: string;
   primaryType: 'faang' | 'unicorn' | 'public';
+  faangCount?: number;
+  unicornCount?: number;
+  publicCount?: number;
+  sampled?: boolean;
 }
 
 export interface MapTechEventCluster {
@@ -1169,6 +1275,8 @@ export interface MapTechEventCluster {
   location: string;
   country: string;
   soonestDaysUntil: number;
+  soonCount?: number;
+  sampled?: boolean;
 }
 
 export interface MapDatacenterCluster {
@@ -1182,4 +1290,7 @@ export interface MapDatacenterCluster {
   totalChips: number;
   totalPowerMW: number;
   majorityExisting: boolean;
+  existingCount?: number;
+  plannedCount?: number;
+  sampled?: boolean;
 }

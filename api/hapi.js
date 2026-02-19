@@ -5,6 +5,7 @@ export const config = { runtime: 'edge' };
 
 import { getCachedJson, setCachedJson } from './_upstash-cache.js';
 import { recordCacheTelemetry } from './_cache-telemetry.js';
+import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
 
 const CACHE_KEY = 'hapi:conflict-events:v2';
 const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 hours
@@ -28,6 +29,10 @@ function toErrorMessage(error) {
 }
 
 export default async function handler(req) {
+  const cors = getCorsHeaders(req);
+  if (isDisallowedOrigin(req)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), { status: 403, headers: cors });
+  }
   const now = Date.now();
   const cached = await getCachedJson(CACHE_KEY);
   if (isValidResult(cached)) {
@@ -35,7 +40,7 @@ export default async function handler(req) {
     return Response.json(cached, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        ...cors,
         'Cache-Control': RESPONSE_CACHE_CONTROL,
         'X-Cache': 'REDIS-HIT',
       },
@@ -47,7 +52,7 @@ export default async function handler(req) {
     return Response.json(fallbackCache.data, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        ...cors,
         'Cache-Control': RESPONSE_CACHE_CONTROL,
         'X-Cache': 'MEMORY-HIT',
       },
@@ -116,7 +121,7 @@ export default async function handler(req) {
     return Response.json(result, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        ...cors,
         'Cache-Control': RESPONSE_CACHE_CONTROL,
         'X-Cache': 'MISS',
       },
@@ -127,7 +132,7 @@ export default async function handler(req) {
       return Response.json(fallbackCache.data, {
         status: 200,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          ...cors,
           'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
           'X-Cache': 'STALE',
         },
@@ -137,7 +142,7 @@ export default async function handler(req) {
     recordCacheTelemetry('/api/hapi', 'ERROR');
     return Response.json({ error: `Fetch failed: ${toErrorMessage(error)}`, countries: [] }, {
       status: 500,
-      headers: { 'Access-Control-Allow-Origin': '*' },
+      headers: { ...cors },
     });
   }
 }
