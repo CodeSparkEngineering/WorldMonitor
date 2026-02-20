@@ -2,6 +2,7 @@ import './styles/main.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Sentry from '@sentry/browser';
 import { inject } from '@vercel/analytics';
+import { injectSpeedInsights } from '@vercel/speed-insights';
 import { App } from './App';
 import { waitForAuth, checkAuthentication } from './services/auth-gate';
 
@@ -114,9 +115,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Clear the one-shot guard after a successful boot so future stale-chunk incidents can recover.
       clearChunkReloadGuard(chunkReloadStorageKey);
 
-      // Inject Vercel Analytics if in production
+      // Inject Vercel Analytics and Speed Insights if in production
       if (location.hostname === 'geonexus.live') {
         inject();
+        injectSpeedInsights();
       }
     } catch (e) {
       console.error('Failed to initialize application:', e);
