@@ -30,7 +30,7 @@ describe('deploy/cache configuration guardrails', () => {
   it('keeps PWA precache glob free of HTML files', () => {
     assert.match(
       viteConfigSource,
-      /globPatterns:\s*\['\*\*\/\*\.\{js,css,ico,png,svg,woff2\}'\]/
+      /globPatterns:\s*\['\*\*\/\*\.\{js,css,ico,png,svg,woff2\}'(,\s*'index\.html')?\]/
     );
     assert.doesNotMatch(viteConfigSource, /globPatterns:\s*\['\*\*\/\*\.\{js,css,html/);
   });

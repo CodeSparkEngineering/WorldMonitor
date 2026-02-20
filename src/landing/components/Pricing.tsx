@@ -35,7 +35,7 @@ export default function Pricing() {
 
     const handleSubscribe = async (plan: string) => {
         if (plan === "CUSTOM") {
-            window.open("mailto:codespark.dev@proton.me", "_blank");
+            window.open("https://wa.me/message/D4VY7QSTGWJXO1", "_blank");
             return;
         }
 
@@ -85,7 +85,7 @@ export default function Pricing() {
             } else {
                 if (newWindow) newWindow.close();
                 console.error('No URL returned:', data);
-                toast.error('CHECKOUT FAILED. TRY AGAIN.');
+                toast.error(`CHECKOUT FAILED: ${data.error || 'Unknown error'}`);
                 setLoadingPlan(null);
             }
         } catch (error) {
@@ -205,7 +205,7 @@ export default function Pricing() {
                             </ul>
 
                             <button
-                                onClick={() => handleSubscribe(tier.price === "CUSTOM" ? "CUSTOM" : tier.name)}
+                                onClick={() => handleSubscribe(index === 1 ? "CUSTOM" : tier.name)}
                                 disabled={loadingPlan === tier.name}
                                 aria-busy={loadingPlan === tier.name}
                                 className={clsx(

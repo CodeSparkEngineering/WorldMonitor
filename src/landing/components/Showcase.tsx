@@ -5,17 +5,17 @@ import { useLanguage } from '../i18n/LanguageContext';
 
 const SCREENSHOTS = [
     {
-        src: '/screenshots/dashboard-map.png',
+        src: '/screenshots/dashboard-map-v2.png',
         title: 'Global Situation Awareness',
         desc: 'Real-time tracking of conflicts, military assets, and critical infrastructure.'
     },
     {
-        src: '/screenshots/intel-modal.png',
+        src: '/screenshots/intel-modal-v2.png',
         title: 'Deep Analysis',
         desc: 'AI-generated insights and velocity spikes for emerging threats.'
     },
     {
-        src: '/screenshots/language-menu.png',
+        src: '/screenshots/language-menu-v2.png',
         title: 'Multi-Language Support',
         desc: 'Native support for 15+ languages including Arabic, Chinese, and Russian.'
     }
