@@ -10,11 +10,6 @@ const SCREENSHOTS = [
         desc: 'Real-time tracking of conflicts, military assets, and critical infrastructure.'
     },
     {
-        src: '/screenshots/intel-feed.png',
-        title: 'Live Intelligence Feed',
-        desc: 'AI-curated news and alerts from thousands of sources worldwide.'
-    },
-    {
         src: '/screenshots/intel-modal.png',
         title: 'Deep Analysis',
         desc: 'AI-generated insights and velocity spikes for emerging threats.'
@@ -24,6 +19,7 @@ const SCREENSHOTS = [
         title: 'Multi-Language Support',
         desc: 'Native support for 15+ languages including Arabic, Chinese, and Russian.'
     }
+
 ];
 
 export default function Showcase() {
@@ -142,14 +138,14 @@ export default function Showcase() {
                     </div>
 
                     {/* Thumbnails Navigation */}
-                    <div className="grid grid-cols-4 gap-4 mt-6 px-2 md:px-0">
+                    <div className="grid grid-cols-3 gap-4 mt-6 px-2 md:px-0">
                         {SCREENSHOTS.map((shot, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => setCurrentIndex(idx)}
                                 className={`relative rounded-lg overflow-hidden border-2 transition-all duration-300 group ${idx === currentIndex
-                                        ? 'border-electric-500 shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-105 z-10'
-                                        : 'border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-600'
+                                    ? 'border-electric-500 shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-105 z-10'
+                                    : 'border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-600'
                                     }`}
                             >
                                 <div className="aspect-video bg-zinc-900 relative">
