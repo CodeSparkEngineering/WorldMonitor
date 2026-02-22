@@ -1,7 +1,7 @@
 const DEFAULT_REMOTE_HOSTS: Record<string, string> = {
-  tech: 'https://tech.geonexus.app',
-  full: 'https://geonexus.live',
-  world: 'https://geonexus.live',
+  tech: 'https://tech.geonexus.live',
+  full: 'https://app.geonexus.live',
+  world: 'https://app.geonexus.live',
 };
 
 const DEFAULT_LOCAL_API_BASE = 'http://127.0.0.1:46123';
@@ -101,7 +101,9 @@ export function toRuntimeUrl(path: string): string {
 const APP_HOSTS = new Set([
   'geonexus.live',
   'www.geonexus.live',
-  'tech.geonexus.app',
+  'app.geonexus.live',
+  'tech.geonexus.live',
+  'finance.geonexus.live',
   'localhost',
   '127.0.0.1',
 ]);
