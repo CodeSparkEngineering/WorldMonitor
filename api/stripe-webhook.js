@@ -5,6 +5,8 @@ export const config = {
     runtime: 'edge',
 };
 
+const CUSTOMER_TTL = 365 * 24 * 60 * 60; // 1 year
+
 export default async function handler(req) {
     if (req.method !== 'POST') {
         return new Response('Method not allowed', { status: 405 });
@@ -37,15 +39,60 @@ export default async function handler(req) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
                 const uid = session.client_reference_id;
+                const email = session.customer_details?.email;
+                const customerName = session.customer_details?.name;
+                const stripeCustomerId = session.customer;
+                const subscriptionId = session.subscription;
 
                 if (uid && redis) {
                     console.log(`[Stripe] Granting access to user: ${uid}`);
                     // Set subscription status for 32 days (buffer for monthly)
                     await redis.set(`sub:${uid}`, 'active', { ex: 32 * 24 * 60 * 60 });
 
+                    // Update customer profile with Stripe data
+                    const existing = await redis.get(`customer:${uid}`);
+                    const now = new Date().toISOString();
+
+                    const profile = (existing && typeof existing === 'object')
+                        ? {
+                            ...existing,
+                            stripeCustomerId: stripeCustomerId || existing.stripeCustomerId,
+                            subscriptionId: subscriptionId || existing.subscriptionId,
+                            subscriptionStatus: 'active',
+                            plan: 'analyst',
+                            subscribedAt: now,
+                            lastPaymentAt: now,
+                            displayName: customerName || existing.displayName,
+                        }
+                        : {
+                            uid,
+                            email: email || null,
+                            displayName: customerName || null,
+                            provider: 'email',
+                            createdAt: now,
+                            lastLoginAt: now,
+                            loginCount: 0,
+                            stripeCustomerId: stripeCustomerId || null,
+                            subscriptionId: subscriptionId || null,
+                            subscriptionStatus: 'active',
+                            plan: 'analyst',
+                            billingCycle: null,
+                            subscribedAt: now,
+                            lastPaymentAt: now,
+                            expiresAt: null,
+                        };
+
+                    await redis.set(`customer:${uid}`, profile, { ex: CUSTOMER_TTL });
+
+                    // Also map stripeCustomerId → uid for webhook lookups
+                    if (stripeCustomerId) {
+                        await redis.set(`stripe:${stripeCustomerId}`, uid, { ex: CUSTOMER_TTL });
+                    }
+
+                    console.log(`[Stripe] Customer profile updated: ${email || uid}`);
+
                     // Send Automated Access Message via Resend
-                    if (resend && session.customer_details?.email) {
-                        const email = session.customer_details.email;
+                    if (resend && email) {
                         console.log(`[Stripe] Dispatching access credentials to ${email}...`);
 
                         try {
@@ -84,14 +131,93 @@ export default async function handler(req) {
             case 'customer.subscription.created':
             case 'customer.subscription.updated': {
                 const subscription = event.data.object;
-                // Note: We might need to map customer_id to uid if metadata is updated
+                const stripeCustomerId = subscription.customer;
                 console.log('[Stripe] Subscription status:', subscription.status);
+
+                if (redis && stripeCustomerId) {
+                    // Look up uid from stripeCustomerId
+                    const uid = await redis.get(`stripe:${stripeCustomerId}`);
+                    if (uid) {
+                        const isActive = subscription.status === 'active' || subscription.status === 'trialing';
+                        if (isActive) {
+                            await redis.set(`sub:${uid}`, 'active', { ex: 32 * 24 * 60 * 60 });
+                        }
+
+                        // Update customer profile
+                        const existing = await redis.get(`customer:${uid}`);
+                        if (existing && typeof existing === 'object') {
+                            existing.subscriptionStatus = subscription.status;
+                            existing.subscriptionId = subscription.id;
+                            await redis.set(`customer:${uid}`, existing, { ex: CUSTOMER_TTL });
+                        }
+                        console.log(`[Stripe] Subscription ${subscription.status} for uid: ${uid}`);
+                    }
+                }
                 break;
             }
 
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object;
-                // Ideal: Revoke access here
+                const stripeCustomerId = subscription.customer;
+                console.log('[Stripe] Subscription cancelled:', subscription.id);
+
+                if (redis && stripeCustomerId) {
+                    // Look up uid from stripeCustomerId
+                    const uid = await redis.get(`stripe:${stripeCustomerId}`);
+                    if (uid) {
+                        // Revoke access
+                        await redis.del(`sub:${uid}`);
+
+                        // Update customer profile
+                        const existing = await redis.get(`customer:${uid}`);
+                        if (existing && typeof existing === 'object') {
+                            existing.subscriptionStatus = 'cancelled';
+                            existing.cancelledAt = new Date().toISOString();
+                            await redis.set(`customer:${uid}`, existing, { ex: CUSTOMER_TTL });
+                        }
+                        console.log(`[Stripe] Access revoked for uid: ${uid}`);
+                    }
+                }
+                break;
+            }
+
+            case 'invoice.payment_succeeded': {
+                const invoice = event.data.object;
+                const stripeCustomerId = invoice.customer;
+
+                if (redis && stripeCustomerId) {
+                    const uid = await redis.get(`stripe:${stripeCustomerId}`);
+                    if (uid) {
+                        // Renew subscription on payment
+                        await redis.set(`sub:${uid}`, 'active', { ex: 32 * 24 * 60 * 60 });
+
+                        const existing = await redis.get(`customer:${uid}`);
+                        if (existing && typeof existing === 'object') {
+                            existing.lastPaymentAt = new Date().toISOString();
+                            existing.subscriptionStatus = 'active';
+                            await redis.set(`customer:${uid}`, existing, { ex: CUSTOMER_TTL });
+                        }
+                        console.log(`[Stripe] Payment renewed for uid: ${uid}`);
+                    }
+                }
+                break;
+            }
+
+            case 'invoice.payment_failed': {
+                const invoice = event.data.object;
+                const stripeCustomerId = invoice.customer;
+
+                if (redis && stripeCustomerId) {
+                    const uid = await redis.get(`stripe:${stripeCustomerId}`);
+                    if (uid) {
+                        const existing = await redis.get(`customer:${uid}`);
+                        if (existing && typeof existing === 'object') {
+                            existing.subscriptionStatus = 'past_due';
+                            await redis.set(`customer:${uid}`, existing, { ex: CUSTOMER_TTL });
+                        }
+                        console.log(`[Stripe] Payment failed for uid: ${uid}`);
+                    }
+                }
                 break;
             }
 

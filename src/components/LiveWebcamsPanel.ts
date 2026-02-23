@@ -177,7 +177,7 @@ export class LiveWebcamsPanel extends Panel {
     iframe.allowFullscreen = true;
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
     iframe.setAttribute('loading', 'lazy');
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+    // Note: sandbox removed — YouTube bot detection breaks inside sandboxed iframes
     return iframe;
   }
 

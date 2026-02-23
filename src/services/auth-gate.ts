@@ -38,8 +38,9 @@ export async function checkAuthentication(): Promise<boolean> {
     const path = window.location.pathname;
     // Handle Vercel clean URLs and base path
     const isLandingPage = path === '/' || path === '/landing' || path === '/index.html' || path === '/landing.html';
+    const isDashboard = path === '/app' || path === '/dashboard' || path === '/app.html';
 
-    console.log(`[Auth] Checking path: ${path} (isLanding: ${isLandingPage})`);
+    console.log(`[Auth] Checking path: ${path} (isLanding: ${isLandingPage}, isDashboard: ${isDashboard})`);
 
     // Skip auth check on specific bypass pages
     if (path.includes('/success') || path.includes('/subscribe')) {
@@ -94,9 +95,9 @@ export async function checkAuthentication(): Promise<boolean> {
             return true;
         } else {
             console.log('[Auth] Subscription active:', data.status);
-            // REMOVED AUTO-REDIRECT FROM LANDING: 
-            // Users can stay on landing page even if subscribed.
-            // They must click "Access Terminal" to enter the app.
+            // If user is on landing and has active subscription, let them stay
+            // They can click "Access Terminal" to go to /app
+            // The LoginModal handles smart redirect after login
             return true;
         }
     } catch (error) {

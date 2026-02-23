@@ -1,4 +1,4 @@
-// Dynamic Meta Tags Service for World Monitor
+// Dynamic Meta Tags Service for GeoNexus
 // Updates OG tags and Twitter Cards for shared stories
 
 interface StoryMeta {
