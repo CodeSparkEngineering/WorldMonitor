@@ -34,7 +34,7 @@ async function checkSubscriptionAndRedirect(uid: string, isNewUser: boolean) {
 
         if (data.active) {
             toast.success('ACCESS GRANTED. ENTERING TERMINAL...');
-            setTimeout(() => { window.location.href = '/app'; }, 800);
+            setTimeout(() => { window.location.href = 'https://app.geonexus.live/'; }, 800);
         } else {
             if (isNewUser) {
                 toast.success('IDENTITY CREATED. SELECT YOUR ACCESS LEVEL.');

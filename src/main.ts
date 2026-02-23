@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) {
     // Redirect to Landing Page
     console.log('[Main] User not authenticated. Redirecting to landing.');
-    window.location.href = '/';
+    window.location.href = 'https://geonexus.live/';
   } else {
     // User is authenticated, but must also check subscription
     try {

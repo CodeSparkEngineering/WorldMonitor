@@ -43,7 +43,7 @@ export async function checkAuthentication(): Promise<boolean> {
     if (!user) {
         console.log('[Auth] No user found - redirecting to landing if necessary');
         if (!isLandingPage) {
-            window.location.href = '/';
+            window.location.href = 'https://geonexus.live/';
             return false;
         }
         return true;
@@ -59,7 +59,7 @@ export async function checkAuthentication(): Promise<boolean> {
             if (!isLandingPage) {
                 toast.error('AUTHENTICATION SYSTEM ERROR. REDIRECTING...');
                 await new Promise(r => setTimeout(r, 2000));
-                window.location.href = '/';
+                window.location.href = 'https://geonexus.live/';
                 return false;
             }
             return true;
@@ -73,7 +73,7 @@ export async function checkAuthentication(): Promise<boolean> {
                 toast.warning('NO ACTIVE SUBSCRIPTION DETECTED. REDIRECTING TO PRICING...');
                 // Wait for toast to be visible
                 await new Promise(r => setTimeout(r, 2500));
-                window.location.href = '/#pricing';
+                window.location.href = 'https://geonexus.live/#pricing';
                 return false;
             }
             return true;
@@ -90,7 +90,7 @@ export async function checkAuthentication(): Promise<boolean> {
         if (!isLandingPage) {
             toast.error('CONNECTION ERROR. SECURE ACCESS REQUIRED.');
             await new Promise(r => setTimeout(r, 2000));
-            window.location.href = '/';
+            window.location.href = 'https://geonexus.live/';
             return false;
         }
         return true;

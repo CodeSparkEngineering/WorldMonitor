@@ -73,7 +73,7 @@ export default function Navbar() {
                                 {user ? (
                                     <div className="flex items-center gap-4">
                                         <button
-                                            onClick={() => window.location.href = '/app'}
+                                            onClick={() => window.location.href = 'https://app.geonexus.live/'}
                                             className="bg-electric-500 text-white px-4 py-2 rounded-sm font-bold hover:bg-electric-400 transition-all no-underline cursor-pointer flex items-center gap-2 shadow-[0_0_20px_rgba(0,128,255,0.3)]"
                                         >
                                             <Terminal className="w-4 h-4" />
@@ -144,7 +144,7 @@ export default function Navbar() {
                                     <>
                                         <button
                                             className="block w-full text-center px-4 py-3 bg-electric-500 text-white font-bold no-underline rounded-sm flex items-center justify-center gap-2"
-                                            onClick={() => window.location.href = '/app'}
+                                            onClick={() => window.location.href = 'https://app.geonexus.live/'}
                                         >
                                             <Terminal className="w-4 h-4" />
                                             DASHBOARD

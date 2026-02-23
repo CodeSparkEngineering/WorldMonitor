@@ -108,6 +108,16 @@
     },
     {
       "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.geonexus.live"
+        }
+      ],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/",
       "destination": "/index.html"
     },
     {
