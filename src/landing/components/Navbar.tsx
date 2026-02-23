@@ -59,8 +59,7 @@ export default function Navbar() {
                                 <button
                                     onClick={() => {
                                         const user = auth.currentUser;
-                                        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                                        if (user || isLocalhost) {
+                                        if (user) {
                                             window.location.href = '/app';
                                         } else {
                                             setIsLoginOpen(true);
@@ -121,8 +120,7 @@ export default function Navbar() {
                                 onClick={() => {
                                     setIsOpen(false);
                                     const user = auth.currentUser;
-                                    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                                    if (user || isLocalhost) {
+                                    if (user) {
                                         window.location.href = '/app';
                                     } else {
                                         setIsLoginOpen(true);

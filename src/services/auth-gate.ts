@@ -8,23 +8,14 @@ import { toast } from 'sonner';
  */
 export function waitForAuth(): Promise<User | null> {
     return new Promise((resolve) => {
-        // Set a timeout as a safety net (5 seconds)
         const timeout = setTimeout(() => {
             console.warn('[Auth] Auth check timed out. Proceeding as guest.');
-            unsubscribe();
             resolve(null);
         }, 5000);
 
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             clearTimeout(timeout);
             unsubscribe();
-            // DEVELOPER BYPASS: Mock user on localhost if no real user
-            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            if (!user && isLocalhost) {
-                console.log('[Auth] No user found on localhost. Providing mock operative for testing.');
-                resolve({ uid: 'dev-guest', email: 'guest@geonexus.local' } as any);
-                return;
-            }
             resolve(user);
         });
     });
@@ -60,14 +51,7 @@ export async function checkAuthentication(): Promise<boolean> {
 
     // If logged in, check subscription
     try {
-        // DEVELOPER BYPASS: Allow full access on localhost or if in dev mode
-        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const isDevMode = import.meta.env.DEV;
-
-        if (isLocalhost || isDevMode || user.uid === 'dev-guest') {
-            console.log('[Auth] Developer bypass active - skipping subscription check');
-            return true;
-        }
+        // Subscription check enabled for all environments
 
         const response = await fetch(`/api/check-subscription?uid=${user.uid}`);
         if (!response.ok) {
