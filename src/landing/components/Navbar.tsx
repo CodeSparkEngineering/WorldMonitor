@@ -1,22 +1,36 @@
 import { motion } from 'framer-motion';
-import { Activity, Menu, X, Globe } from 'lucide-react';
-import { useState } from 'react';
+import { Activity, Menu, X, Globe, LogOut, Terminal } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Language } from '../i18n/translations';
 
 import LoginModal from './LoginModal';
 import { auth } from '../../lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { authService } from '../../services/auth';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [user, setUser] = useState<User | null>(auth.currentUser);
     const { t, language, setLanguage } = useLanguage();
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+        });
+        return () => unsubscribe();
+    }, []);
 
     const languages: { code: Language; label: string }[] = [
         { code: 'en', label: 'EN' },
         { code: 'pt', label: 'PT' },
         { code: 'es', label: 'ES' }
     ];
+
+    const handleLogout = async () => {
+        await authService.logout();
+    };
 
     return (
         <>
@@ -56,19 +70,32 @@ export default function Navbar() {
                                     ))}
                                 </div>
 
-                                <button
-                                    onClick={() => {
-                                        const user = auth.currentUser;
-                                        if (user) {
-                                            window.location.href = '/app';
-                                        } else {
-                                            setIsLoginOpen(true);
-                                        }
-                                    }}
-                                    className="bg-electric-500/10 border border-electric-500 text-electric-500 px-4 py-2 rounded-sm font-bold hover:bg-electric-500 hover:text-white transition-all no-underline cursor-pointer shadow-[0_0_20px_rgba(0,128,255,0.2)] hover:shadow-[0_0_30px_rgba(0,128,255,0.4)]"
-                                >
-                                    {t('navbar.access_terminal')}
-                                </button>
+                                {user ? (
+                                    <div className="flex items-center gap-4">
+                                        <button
+                                            onClick={() => window.location.href = '/app'}
+                                            className="bg-electric-500 text-white px-4 py-2 rounded-sm font-bold hover:bg-electric-400 transition-all no-underline cursor-pointer flex items-center gap-2 shadow-[0_0_20px_rgba(0,128,255,0.3)]"
+                                        >
+                                            <Terminal className="w-4 h-4" />
+                                            DASHBOARD
+                                        </button>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"
+                                            title="Sign Out"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            <span className="text-[10px] uppercase tracking-widest font-bold">Sign Out</span>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => setIsLoginOpen(true)}
+                                        className="bg-electric-500/10 border border-electric-500 text-electric-500 px-4 py-2 rounded-sm font-bold hover:bg-electric-500 hover:text-white transition-all no-underline cursor-pointer shadow-[0_0_20px_rgba(0,128,255,0.2)] hover:shadow-[0_0_30px_rgba(0,128,255,0.4)]"
+                                    >
+                                        {t('navbar.access_terminal')}
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -101,10 +128,7 @@ export default function Navbar() {
                                         {languages.map((lang) => (
                                             <button
                                                 key={lang.code}
-                                                onClick={() => {
-                                                    setLanguage(lang.code);
-                                                    // Optional: keep menu open to see change? No, usually close is better but let's keep it open for feedback.
-                                                }}
+                                                onClick={() => setLanguage(lang.code)}
                                                 className={`text-sm font-bold transition-colors ${language === lang.code ? 'text-electric-500' : 'text-gray-500 hover:text-gray-300'
                                                     }`}
                                             >
@@ -115,20 +139,39 @@ export default function Navbar() {
                                 </div>
                             </div>
 
-                            <button
-                                className="block w-full text-center px-4 py-3 bg-electric-500/10 border border-electric-500 text-electric-500 font-bold no-underline rounded-sm"
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    const user = auth.currentUser;
-                                    if (user) {
-                                        window.location.href = '/app';
-                                    } else {
-                                        setIsLoginOpen(true);
-                                    }
-                                }}
-                            >
-                                {t('navbar.access_terminal')}
-                            </button>
+                            <div className="px-3 pt-2 space-y-3">
+                                {user ? (
+                                    <>
+                                        <button
+                                            className="block w-full text-center px-4 py-3 bg-electric-500 text-white font-bold no-underline rounded-sm flex items-center justify-center gap-2"
+                                            onClick={() => window.location.href = '/app'}
+                                        >
+                                            <Terminal className="w-4 h-4" />
+                                            DASHBOARD
+                                        </button>
+                                        <button
+                                            className="block w-full text-center px-4 py-3 bg-zinc-800 text-gray-400 font-bold no-underline rounded-sm flex items-center justify-center gap-2"
+                                            onClick={() => {
+                                                setIsOpen(false);
+                                                handleLogout();
+                                            }}
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            SIGN OUT
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        className="block w-full text-center px-4 py-3 bg-electric-500/10 border border-electric-500 text-electric-500 font-bold no-underline rounded-sm"
+                                        onClick={() => {
+                                            setIsOpen(false);
+                                            setIsLoginOpen(true);
+                                        }}
+                                    >
+                                        {t('navbar.access_terminal')}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </motion.div>
                 )}
@@ -138,3 +181,4 @@ export default function Navbar() {
         </>
     );
 }
+

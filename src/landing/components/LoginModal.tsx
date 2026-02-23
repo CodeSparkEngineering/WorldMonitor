@@ -163,14 +163,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             </div>
 
                             <h2 className="text-2xl font-bold text-center text-white mb-2 tracking-tight">
-                                {isResetting ? 'RESET PASSCODE' : isRegistering ? 'NEW OPERATIVE REGISTRATION' : 'TERMINAL ACCESS'}
+                                {isResetting ? 'RESET PASSCODE' : isRegistering ? 'GEONEXUS REGISTRATION' : 'GEONEXUS ACCESS'}
                             </h2>
                             <p className="text-center text-zinc-500 text-sm mb-6 font-mono">
                                 {isResetting
                                     ? 'Enter your email to receive a reset link.'
                                     : isRegistering
-                                        ? 'Enter credentials to create your secure identity.'
-                                        : 'Enter your credentials to access the dashboard.'}
+                                        ? 'Create your secure identity for GeoNexus intelligence.'
+                                        : 'Enter your credentials to access the GeoNexus terminal.'}
                             </p>
 
                             {/* Google Sign-In Button */}
