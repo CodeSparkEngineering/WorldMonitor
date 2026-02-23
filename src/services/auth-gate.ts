@@ -51,7 +51,12 @@ export async function checkAuthentication(): Promise<boolean> {
 
     // If logged in, check subscription
     try {
-        // Subscription check enabled for all environments
+        // ADMIN BYPASS: Bypass subscription check for specific admin emails
+        const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase());
+        if (user.email && adminEmails.includes(user.email.toLowerCase())) {
+            console.log('[Auth] Admin bypass triggered for:', user.email);
+            return true;
+        }
 
         const response = await fetch(`/api/check-subscription?uid=${user.uid}`);
         if (!response.ok) {

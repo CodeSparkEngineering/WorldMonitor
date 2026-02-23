@@ -29,6 +29,17 @@ async function saveCustomerProfile(uid: string, email: string, displayName: stri
 
 async function checkSubscriptionAndRedirect(uid: string, isNewUser: boolean) {
     try {
+        // ADMIN BYPASS: Bypass subscription check for specific admin emails
+        const user = auth.currentUser;
+        const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase());
+
+        if (user?.email && adminEmails.includes(user.email.toLowerCase())) {
+            console.log('[Auth] Admin login bypass triggered for:', user.email);
+            toast.success('ADMINISTRATIVE ACCESS GRANTED.');
+            setTimeout(() => { window.location.href = 'https://app.geonexus.live/'; }, 800);
+            return;
+        }
+
         const response = await fetch(`/api/check-subscription?uid=${uid}`);
         const data = await response.json();
 
