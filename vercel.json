@@ -87,6 +87,26 @@
   ],
   "rewrites": [
     {
+      "source": "/(app|dashboard|settings|login|terminal|intel).*",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.geonexus.live"
+        }
+      ],
+      "destination": "/app.html"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.geonexus.live"
+        }
+      ],
+      "destination": "/app.html"
+    },
+    {
       "source": "/(.*)",
       "has": [
         {
