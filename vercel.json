@@ -87,61 +87,15 @@
   ],
   "rewrites": [
     {
-      "source": "/(app|dashboard|settings|login|terminal|intel).*",
-      "has": [
-        {
-          "type": "host",
-          "value": "app.geonexus.live"
-        }
-      ],
-      "destination": "/app.html"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "app.geonexus.live"
-        }
-      ],
-      "destination": "/app.html"
-    },
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "app.geonexus.live"
-        }
-      ],
-      "destination": "/app.html"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "geonexus.live"
-        }
-      ],
+      "source": "/tech",
       "destination": "/index.html"
     },
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.geonexus.live"
-        }
-      ],
+      "source": "/finance",
       "destination": "/index.html"
     },
     {
-      "source": "/",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/landing",
+      "source": "/financial",
       "destination": "/index.html"
     },
     {
@@ -155,6 +109,14 @@
     {
       "source": "/settings",
       "destination": "/settings.html"
+    },
+    {
+      "source": "/landing",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
     }
   ],
   "cleanUrls": true

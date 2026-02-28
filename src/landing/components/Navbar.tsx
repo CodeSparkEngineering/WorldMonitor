@@ -19,7 +19,15 @@ export default function Navbar() {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
         });
-        return () => unsubscribe();
+
+        // Listen for open-login events to trigger the modal from other components
+        const handleOpenLogin = () => setIsLoginOpen(true);
+        window.addEventListener('open-login', handleOpenLogin);
+
+        return () => {
+            unsubscribe();
+            window.removeEventListener('open-login', handleOpenLogin);
+        };
     }, []);
 
     const languages: { code: Language; label: string }[] = [
@@ -73,7 +81,7 @@ export default function Navbar() {
                                 {user ? (
                                     <div className="flex items-center gap-4">
                                         <button
-                                            onClick={() => window.location.href = 'https://app.geonexus.live/'}
+                                            onClick={() => window.location.href = '/app'}
                                             className="bg-electric-500 text-white px-4 py-2 rounded-sm font-bold hover:bg-electric-400 transition-all no-underline cursor-pointer flex items-center gap-2 shadow-[0_0_20px_rgba(0,128,255,0.3)]"
                                         >
                                             <Terminal className="w-4 h-4" />
@@ -144,7 +152,7 @@ export default function Navbar() {
                                     <>
                                         <button
                                             className="block w-full text-center px-4 py-3 bg-electric-500 text-white font-bold no-underline rounded-sm flex items-center justify-center gap-2"
-                                            onClick={() => window.location.href = 'https://app.geonexus.live/'}
+                                            onClick={() => window.location.href = '/app'}
                                         >
                                             <Terminal className="w-4 h-4" />
                                             DASHBOARD

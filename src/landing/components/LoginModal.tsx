@@ -36,7 +36,7 @@ async function checkSubscriptionAndRedirect(uid: string, isNewUser: boolean) {
         if (user?.email && adminEmails.includes(user.email.toLowerCase())) {
             console.log('[Auth] Admin login bypass triggered for:', user.email);
             toast.success('ADMINISTRATIVE ACCESS GRANTED.');
-            setTimeout(() => { window.location.href = 'https://app.geonexus.live/'; }, 800);
+            setTimeout(() => { window.location.href = '/app'; }, 800);
             return;
         }
 
@@ -45,7 +45,7 @@ async function checkSubscriptionAndRedirect(uid: string, isNewUser: boolean) {
 
         if (data.active) {
             toast.success('ACCESS GRANTED. ENTERING TERMINAL...');
-            setTimeout(() => { window.location.href = 'https://app.geonexus.live/'; }, 800);
+            setTimeout(() => { window.location.href = '/app'; }, 800);
         } else {
             if (isNewUser) {
                 toast.success('IDENTITY CREATED. SELECT YOUR ACCESS LEVEL.');

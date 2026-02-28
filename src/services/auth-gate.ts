@@ -28,7 +28,9 @@ export function isAuthenticated(): boolean {
 export async function checkAuthentication(): Promise<boolean> {
     const path = window.location.pathname;
     // Handle Vercel clean URLs and base path
-    const isLandingPage = path === '/' || path === '/landing' || path === '/index.html' || path === '/landing.html';
+    const isLandingPage = path === '/' || path === '/index.html' ||
+        path.startsWith('/tech') || path.startsWith('/finance') ||
+        path.startsWith('/financial');
     const isDashboard = path === '/app' || path === '/dashboard' || path === '/app.html';
 
     console.log(`[Auth] Checking path: ${path} (isLanding: ${isLandingPage}, isDashboard: ${isDashboard})`);
@@ -41,9 +43,9 @@ export async function checkAuthentication(): Promise<boolean> {
     const user = await waitForAuth();
 
     if (!user) {
-        console.log('[Auth] No user found - redirecting to landing if necessary');
         if (!isLandingPage) {
-            window.location.href = 'https://geonexus.live/';
+            console.log('[AuthGate] Not on landing page. Redirecting to /');
+            window.location.href = '/';
             return false;
         }
         return true;
@@ -61,13 +63,15 @@ export async function checkAuthentication(): Promise<boolean> {
         const response = await fetch(`/api/check-subscription?uid=${user.uid}`);
         if (!response.ok) {
             console.error('[Auth] Subscription API error:', response.status);
-            if (!isLandingPage) {
-                toast.error('AUTHENTICATION SYSTEM ERROR. REDIRECTING...');
-                await new Promise(r => setTimeout(r, 2000));
-                window.location.href = 'https://geonexus.live/';
-                return false;
+            if (isLandingPage) {
+                console.log('[AuthGate] User verified & authed. Redirecting to /app');
+                window.location.href = '/app';
+                return false; // Added return false here to prevent further execution
             }
-            return true;
+            toast.error('AUTHENTICATION SYSTEM ERROR. REDIRECTING...');
+            await new Promise(r => setTimeout(r, 2000));
+            window.location.href = '/';
+            return false;
         }
 
         const data = await response.json();
@@ -78,7 +82,8 @@ export async function checkAuthentication(): Promise<boolean> {
                 toast.warning('NO ACTIVE SUBSCRIPTION DETECTED. REDIRECTING TO PRICING...');
                 // Wait for toast to be visible
                 await new Promise(r => setTimeout(r, 2500));
-                window.location.href = 'https://geonexus.live/#pricing';
+                console.log('[AuthGate] Needs subscription. Redirecting to /#pricing');
+                window.location.href = '/#pricing';
                 return false;
             }
             return true;
@@ -95,7 +100,7 @@ export async function checkAuthentication(): Promise<boolean> {
         if (!isLandingPage) {
             toast.error('CONNECTION ERROR. SECURE ACCESS REQUIRED.');
             await new Promise(r => setTimeout(r, 2000));
-            window.location.href = 'https://geonexus.live/';
+            window.location.href = '/';
             return false;
         }
         return true;

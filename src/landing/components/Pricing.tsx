@@ -57,6 +57,13 @@ export default function Pricing() {
             // Get current user UID for fulfillment tracking
             const user = authService.getUser();
 
+            if (!user) {
+                toast.info(t('pricing.login_required') || 'PLEASE CREATE AN IDENTITY OR LOGIN BEFORE SUBSCRIBING.');
+                window.dispatchEvent(new CustomEvent('open-login'));
+                setLoadingPlan(null);
+                return;
+            }
+
             // Open new window immediately to avoid popup blockers
             const newWindow = window.open('', '_blank');
 

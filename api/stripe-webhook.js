@@ -38,11 +38,22 @@ export default async function handler(req) {
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
-                const uid = session.client_reference_id;
+                let uid = session.client_reference_id;
                 const email = session.customer_details?.email;
                 const customerName = session.customer_details?.name;
                 const stripeCustomerId = session.customer;
                 const subscriptionId = session.subscription;
+
+                // Fallback: If UID is missing but we have an email, try to find the user in Redis
+                if (!uid && email && redis) {
+                    console.log(`[Stripe] UID missing, attempting email lookup for: ${email}`);
+                    const emailKey = email.toLowerCase().trim();
+                    const foundUid = await redis.get(`email:${emailKey}`);
+                    if (foundUid) {
+                        uid = foundUid;
+                        console.log(`[Stripe] Found UID via email lookup: ${uid}`);
+                    }
+                }
 
                 if (uid && redis) {
                     console.log(`[Stripe] Granting access to user: ${uid}`);
