@@ -41,8 +41,7 @@ export default async function handler(req) {
         }), {
             status: 200,
             headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'private, max-age=60' // Cache for 1 min
+                'Content-Type': 'application/json'
             },
         });
     } catch (error) {
