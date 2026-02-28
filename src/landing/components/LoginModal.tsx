@@ -27,14 +27,13 @@ async function saveCustomerProfile(uid: string, email: string, displayName: stri
     }
 }
 
-async function checkSubscriptionAndRedirect(uid: string, isNewUser: boolean) {
+async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUser: boolean) {
     try {
         // ADMIN BYPASS: Bypass subscription check for specific admin emails
-        const user = auth.currentUser;
         const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase());
 
-        if (user?.email && adminEmails.includes(user.email.toLowerCase())) {
-            console.log('[Auth] Admin login bypass triggered for:', user.email);
+        if (email && adminEmails.includes(email.toLowerCase())) {
+            console.log('[Auth] Admin login bypass triggered for:', email);
             toast.success('ADMINISTRATIVE ACCESS GRANTED.');
             setTimeout(() => { window.location.href = '/app'; }, 800);
             return;
@@ -48,15 +47,43 @@ async function checkSubscriptionAndRedirect(uid: string, isNewUser: boolean) {
             setTimeout(() => { window.location.href = '/app'; }, 800);
         } else {
             if (isNewUser) {
-                toast.success('IDENTITY CREATED. SELECT YOUR ACCESS LEVEL.');
+                toast.success('IDENTITY CREATED. INITIATING SECURE CHECKOUT...');
             } else {
-                toast.info('NO ACTIVE SUBSCRIPTION. REDIRECTING TO PRICING...');
+                toast.info('NO ACTIVE SUBSCRIPTION. INITIATING SECURE CHECKOUT...');
             }
-            setTimeout(() => { window.location.href = '/#pricing'; }, 800);
+
+            try {
+                const pendingPlan = sessionStorage.getItem('pendingPlan');
+                const priceId = pendingPlan === 'annual'
+                    ? import.meta.env.VITE_STRIPE_ANNUAL_PRICE_ID
+                    : import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID;
+
+                const res = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ priceId, uid: uid, email: email })
+                });
+                const checkoutData = await res.json();
+
+                if (checkoutData.url) {
+                    setTimeout(() => { window.location.href = checkoutData.url; }, 800);
+                } else {
+                    throw new Error('No checkout URL');
+                }
+            } catch (e) {
+                // If API fails, reload page to reset modal state at least
+                setTimeout(() => {
+                    window.location.href = '/#pricing';
+                    setTimeout(() => window.location.reload(), 100);
+                }, 800);
+            }
         }
     } catch {
-        // If check fails, default to pricing
-        setTimeout(() => { window.location.href = '/#pricing'; }, 800);
+        // If check fails, default to pricing and reload
+        setTimeout(() => {
+            window.location.href = '/#pricing';
+            setTimeout(() => window.location.reload(), 100);
+        }, 800);
     }
 }
 
@@ -76,11 +103,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             if (isRegistering) {
                 const cred = await createUserWithEmailAndPassword(auth, email, password);
                 await saveCustomerProfile(cred.user.uid, email, null, 'email', 'register');
-                await checkSubscriptionAndRedirect(cred.user.uid, true);
+                await checkSubscriptionAndRedirect(cred.user.uid, email, true);
             } else {
                 const cred = await signInWithEmailAndPassword(auth, email, password);
                 await saveCustomerProfile(cred.user.uid, email, cred.user.displayName, 'email', 'login');
-                await checkSubscriptionAndRedirect(cred.user.uid, false);
+                await checkSubscriptionAndRedirect(cred.user.uid, email, false);
             }
         } catch (error: any) {
             console.error('Auth error:', error);
@@ -111,7 +138,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 toast.success('GOOGLE IDENTITY CONFIRMED. ACCESS GRANTED.');
             }
 
-            await checkSubscriptionAndRedirect(user.uid, isNew);
+            await checkSubscriptionAndRedirect(user.uid, user.email!, isNew);
         } catch (error: any) {
             console.error('Google auth error:', error);
             if (error.code !== 'auth/popup-closed-by-user') {

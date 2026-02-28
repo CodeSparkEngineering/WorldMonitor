@@ -58,6 +58,7 @@ export default function Pricing() {
             const user = authService.getUser();
 
             if (!user) {
+                sessionStorage.setItem('pendingPlan', billingCycle);
                 toast.info(t('pricing.login_required') || 'PLEASE CREATE AN IDENTITY OR LOGIN BEFORE SUBSCRIBING.');
                 window.dispatchEvent(new CustomEvent('open-login'));
                 setLoadingPlan(null);
