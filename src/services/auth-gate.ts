@@ -64,12 +64,8 @@ export async function checkAuthentication(): Promise<boolean> {
         if (!response.ok) {
             console.error('[Auth] Subscription API error:', response.status);
             if (isLandingPage) {
-                console.log('[AuthGate] User verified & authed. Redirecting to app');
-                // Preserve subpath if possible, otherwise default to /app
-                const target = path.startsWith('/tech') ? '/app/tech' :
-                    (path.startsWith('/finance') || path.startsWith('/financial')) ? '/app/finance' :
-                        '/app';
-                window.location.href = target;
+                console.log('[AuthGate] API Error on landing page. Blocking auto-redirect.');
+                toast.error('SUBSCRIPTION SERVICE UNAVAILABLE. PLEASE TRY AGAIN LATER.');
                 return false;
             }
             toast.error('AUTHENTICATION SYSTEM ERROR. REDIRECTING...');

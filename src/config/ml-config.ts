@@ -62,10 +62,10 @@ export const MODEL_CONFIGS: ModelConfig[] = [
 ];
 
 export const ML_FEATURE_FLAGS = {
-  semanticClustering: true,
-  mlSentiment: true,
-  summarization: true,
-  mlNER: true,
+  semanticClustering: false,
+  mlSentiment: false,
+  summarization: false,
+  mlNER: false,
   insightsPanel: true,
 };
 

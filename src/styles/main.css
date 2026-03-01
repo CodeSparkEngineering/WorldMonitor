@@ -14451,3 +14451,110 @@ STABLECOIN PANEL .stablecoin-container {
     grid-row: unset !important;
   }
 }
+
+/* Confirmation Modal */
+.confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+
+.confirmation-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.confirmation-modal {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px var(--shadow-color);
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+}
+
+.confirmation-overlay.active .confirmation-modal {
+  transform: translateY(0) scale(1);
+}
+
+.confirmation-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.confirmation-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+
+.confirmation-content {
+  padding: 24px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.confirmation-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--bg-secondary);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.confirmation-btn-cancel,
+.confirmation-btn-confirm {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmation-btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.confirmation-btn-cancel:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-dim);
+}
+
+.confirmation-btn-confirm {
+  background: var(--red);
+  border: none;
+  color: #fff;
+}
+
+.confirmation-btn-confirm:hover {
+  background: #cc0000;
+  box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+}
