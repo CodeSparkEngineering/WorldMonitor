@@ -510,7 +510,7 @@ export class App {
 
       const releaseUrl = typeof data.url === 'string' && data.url
         ? data.url
-        : 'https://github.com/koala73/worldmonitor/releases/latest';
+        : 'https://github.com/CodeSparkEngineering/WorldMonitor/releases/latest';
       this.logUpdaterOutcome('update_available', { current, remote, dismissed: false });
       await this.showUpdateBadge(remote, releaseUrl);
     } catch (error) {

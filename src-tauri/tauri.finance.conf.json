@@ -1,18 +1,18 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Finance Monitor",
-  "mainBinaryName": "finance-monitor",
-  "identifier": "app.worldmonitor.finance.desktop",
+  "productName": "GeoNexus Finance",
+  "mainBinaryName": "geonexus-finance",
+  "identifier": "app.geonexus.finance.desktop",
   "app": {
     "windows": [
       {
-        "title": "Finance Monitor"
+        "title": "GeoNexus Finance"
       }
     ]
   },
   "bundle": {
-    "shortDescription": "Finance Monitor desktop app",
-    "longDescription": "Finance Monitor desktop app for real-time markets and trading intelligence.",
+    "shortDescription": "GeoNexus Finance desktop app",
+    "longDescription": "GeoNexus Finance desktop app for real-time markets and trading intelligence.",
     "targets": [
       "app",
       "dmg",

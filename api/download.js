@@ -1,7 +1,7 @@
 export const config = { runtime: 'edge' };
 
-const RELEASES_URL = 'https://api.github.com/repos/koala73/worldmonitor/releases/latest';
-const RELEASES_PAGE = 'https://github.com/koala73/worldmonitor/releases/latest';
+const RELEASES_URL = 'https://api.github.com/repos/CodeSparkEngineering/WorldMonitor/releases/latest';
+const RELEASES_PAGE = 'https://github.com/CodeSparkEngineering/WorldMonitor/releases/latest';
 
 const PLATFORM_PATTERNS = {
   'windows-exe': (name) => name.endsWith('_x64-setup.exe'),
@@ -12,10 +12,10 @@ const PLATFORM_PATTERNS = {
 };
 
 const VARIANT_PREFIXES = {
-  full: ['world-monitor'],
-  world: ['world-monitor'],
-  tech: ['tech-monitor'],
-  finance: ['finance-monitor'],
+  full: ['geonexus'],
+  world: ['geonexus'],
+  tech: ['geonexus-tech'],
+  finance: ['geonexus-finance'],
 };
 
 function findAssetForVariant(assets, variant, platformMatcher) {
