@@ -31,7 +31,7 @@ export async function checkAuthentication(): Promise<boolean> {
     const isLandingPage = path === '/' || path === '/index.html' ||
         path.startsWith('/tech') || path.startsWith('/finance') ||
         path.startsWith('/financial');
-    const isDashboard = path === '/app' || path === '/dashboard' || path === '/app.html';
+    const isDashboard = path === '/app' || path.startsWith('/app/') || path === '/dashboard' || path === '/app.html';
 
     console.log(`[Auth] Checking path: ${path} (isLanding: ${isLandingPage}, isDashboard: ${isDashboard})`);
 
@@ -64,9 +64,13 @@ export async function checkAuthentication(): Promise<boolean> {
         if (!response.ok) {
             console.error('[Auth] Subscription API error:', response.status);
             if (isLandingPage) {
-                console.log('[AuthGate] User verified & authed. Redirecting to /app');
-                window.location.href = '/app';
-                return false; // Added return false here to prevent further execution
+                console.log('[AuthGate] User verified & authed. Redirecting to app');
+                // Preserve subpath if possible, otherwise default to /app
+                const target = path.startsWith('/tech') ? '/app/tech' :
+                    (path.startsWith('/finance') || path.startsWith('/financial')) ? '/app/finance' :
+                        '/app';
+                window.location.href = target;
+                return false;
             }
             toast.error('AUTHENTICATION SYSTEM ERROR. REDIRECTING...');
             await new Promise(r => setTimeout(r, 2000));

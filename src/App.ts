@@ -2603,11 +2603,17 @@ export class App {
     });
 
     // Logout button
-    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+    const logoutBtn = document.getElementById('logoutBtn');
+    console.log('[App] Logout button found:', !!logoutBtn);
+    logoutBtn?.addEventListener('click', () => {
+      console.log('[App] Logout button clicked');
       this.confirmationModal?.show(
         'Sign Out',
         'Are you sure you want to sign out?',
-        () => authService.logout()
+        () => {
+          console.log('[App] Logout confirmed');
+          authService.logout();
+        }
       );
     });
 
