@@ -103,7 +103,7 @@
       "destination": "/app.html"
     },
     {
-      "source": "/app/(.*)",
+      "source": "/app/:path*",
       "destination": "/app.html"
     },
     {
