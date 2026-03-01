@@ -11,8 +11,8 @@ export const SITE_VARIANT: string = (() => {
     const path = window.location.pathname;
 
     // Check path first (new single-domain strategy)
-    if (path.startsWith('/tech')) return 'tech';
-    if (path.startsWith('/finance') || path.startsWith('/financial')) return 'finance';
+    if (path.startsWith('/tech') || path.startsWith('/app/tech')) return 'tech';
+    if (path.startsWith('/finance') || path.startsWith('/financial') || path.startsWith('/app/finance') || path.startsWith('/app/financial')) return 'finance';
 
     // Check hostname (legacy subdomain strategy)
     if (host === 'tech.geonexus.live' || (host.startsWith('tech.') && !host.endsWith('.live'))) return 'tech';

@@ -1788,7 +1788,7 @@ export class App {
       <div class="header">
         <div class="header-left">
           <div class="variant-switcher">
-            <a href="${this.isDesktopApp ? '#' : (SITE_VARIANT === 'full' ? '#' : 'https://app.geonexus.live')}"
+            <a href="${this.isDesktopApp ? '#' : (SITE_VARIANT === 'full' ? '#' : '/app')}"
                class="variant-option ${SITE_VARIANT === 'full' ? 'active' : ''}"
                data-variant="full"
                ${!this.isDesktopApp && SITE_VARIANT !== 'full' ? 'target="_blank" rel="noopener"' : ''}
@@ -1797,7 +1797,7 @@ export class App {
               <span class="variant-label">${t('header.world')}</span>
             </a>
             <span class="variant-divider"></span>
-            <a href="${this.isDesktopApp ? '#' : (SITE_VARIANT === 'tech' ? '#' : 'https://tech.geonexus.live')}"
+            <a href="${this.isDesktopApp ? '#' : (SITE_VARIANT === 'tech' ? '#' : '/app/tech')}"
                class="variant-option ${SITE_VARIANT === 'tech' ? 'active' : ''}"
                data-variant="tech"
                ${!this.isDesktopApp && SITE_VARIANT !== 'tech' ? 'target="_blank" rel="noopener"' : ''}
@@ -1805,8 +1805,8 @@ export class App {
               <span class="variant-icon">💻</span>
               <span class="variant-label">${t('header.tech')}</span>
             </a>
-            <span class="variant-divider"></span>
-            <a href="${this.isDesktopApp ? '#' : (SITE_VARIANT === 'finance' ? '#' : 'https://finance.geonexus.live')}"
+             <span class="variant-divider"></span>
+            <a href="${this.isDesktopApp ? '#' : (SITE_VARIANT === 'finance' ? '#' : '/app/finance')}"
                class="variant-option ${SITE_VARIANT === 'finance' ? 'active' : ''}"
                data-variant="finance"
                ${!this.isDesktopApp && SITE_VARIANT !== 'finance' ? 'target="_blank" rel="noopener"' : ''}
