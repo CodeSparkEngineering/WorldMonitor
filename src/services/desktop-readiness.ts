@@ -66,11 +66,21 @@ export const DESKTOP_PARITY_FEATURES: DesktopParityFeature[] = [
     priority: 1,
   },
   {
+    id: 'cyber-panel',
+    panel: 'CyberPanel',
+    serviceFiles: ['src/services/cyber-threats.ts'],
+    apiRoutes: ['/api/cyber-threats'],
+    apiHandlers: ['api/cyber-threats.js'],
+    locality: 'api-key',
+    fallback: 'Cyber threat intel degrades to local heuristics when provider keys are missing.',
+    priority: 1,
+  },
+  {
     id: 'map-layers-core',
-    panel: 'Map layers (conflicts/outages/cyber/ais/flights)',
-    serviceFiles: ['src/services/conflicts.ts', 'src/services/outages.ts', 'src/services/cyber-threats.ts', 'src/services/ais.ts', 'src/services/military-flights.ts'],
-    apiRoutes: ['/api/acled-conflict', '/api/cloudflare-outages', '/api/cyber-threats', '/api/ais-snapshot', '/api/opensky'],
-    apiHandlers: ['api/acled-conflict.js', 'api/cloudflare-outages.js', 'api/cyber-threats.js', 'api/ais-snapshot.js', 'api/opensky.js'],
+    panel: 'Map layers (conflicts/outages/ais/flights)',
+    serviceFiles: ['src/services/conflicts.ts', 'src/services/outages.ts', 'src/services/ais.ts', 'src/services/military-flights.ts'],
+    apiRoutes: ['/api/acled-conflict', '/api/cloudflare-outages', '/api/ais-snapshot', '/api/opensky'],
+    apiHandlers: ['api/acled-conflict.js', 'api/cloudflare-outages.js', 'api/ais-snapshot.js', 'api/opensky.js'],
     locality: 'api-key',
     fallback: 'Unavailable feeds are disabled while map rendering remains active for local/static layers.',
     priority: 1,
@@ -96,6 +106,26 @@ export const DESKTOP_PARITY_FEATURES: DesktopParityFeature[] = [
     priority: 2,
   },
   {
+    id: 'environment-intel',
+    panel: 'Environment (Fires/Quakes/Climate)',
+    serviceFiles: ['src/services/firms-satellite.ts', 'src/services/earthquakes.ts', 'src/services/climate.ts'],
+    apiRoutes: ['/api/firms-fires', '/api/earthquakes', '/api/climate-anomalies'],
+    apiHandlers: ['api/firms-fires.js', 'api/earthquakes.js', 'api/climate-anomalies.js'],
+    locality: 'fully-local',
+    fallback: 'Environmental layers fall back to local disaster datasets when real-time feeds fail.',
+    priority: 2,
+  },
+  {
+    id: 'finance-intel',
+    panel: 'Finance Intelligence',
+    serviceFiles: ['src/services/fred.ts', 'src/services/oil-analytics.ts'],
+    apiRoutes: ['/api/etf-flows', '/api/macro-signals', '/api/stablecoin-markets'],
+    apiHandlers: ['api/etf-flows.js', 'api/macro-signals.js', 'api/stablecoin-markets.js'],
+    locality: 'fully-local',
+    fallback: 'Financial analytics operate on local data snapshots in offline mode.',
+    priority: 2,
+  },
+  {
     id: 'wingbits-enrichment',
     panel: 'Map layers (flight enrichment)',
     serviceFiles: ['src/services/wingbits.ts'],
@@ -115,6 +145,16 @@ export const DESKTOP_PARITY_FEATURES: DesktopParityFeature[] = [
     fallback: 'If relay is unreachable, service falls back to Vercel proxy path and then no-data mode.',
     priority: 3,
   },
+  {
+    id: 'infra-updates',
+    panel: 'Infrastructure (Updates/Downloads)',
+    serviceFiles: ['src/services/runtime.ts'],
+    apiRoutes: ['/api/version', '/api/download'],
+    apiHandlers: ['api/version.js', 'api/download.js'],
+    locality: 'cloud-fallback',
+    fallback: 'Maintenance tasks require cloud connectivity to GitHub repository.',
+    priority: 3,
+  },
 ];
 
 export function getNonParityFeatures(): DesktopParityFeature[] {
@@ -127,10 +167,11 @@ export function getDesktopReadinessChecks(localBackendEnabled: boolean): Desktop
   return [
     { id: 'startup', label: 'Desktop startup + sidecar API health', ready: localBackendEnabled },
     { id: 'map', label: 'Map rendering (local layers + static geo assets)', ready: true },
-    { id: 'core-intel', label: 'Core intelligence panels (Live News, Monitor, Strategic Risk)', ready: true },
+    { id: 'core-intel', label: 'Core intelligence (News, Monitor, Risk, Cyber)', ready: true },
     { id: 'summaries', label: 'Summaries (provider-backed or browser fallback)', ready: isFeatureAvailable('aiGroq') || isFeatureAvailable('aiOpenRouter') },
-    { id: 'market', label: 'Market panel live data paths', ready: true },
+    { id: 'market', label: 'Market & Finance panel live data paths', ready: true },
     { id: 'live-tracking', label: 'At least one live-tracking mode (AIS or OpenSky)', ready: liveTrackingReady },
+    { id: 'infra', label: 'Infrastructure (Rebranded Updates & Downloads)', ready: true },
   ];
 }
 
