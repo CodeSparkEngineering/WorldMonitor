@@ -88,55 +88,51 @@
   "rewrites": [
     {
       "source": "/app",
-      "destination": "/app.html"
+      "destination": "/app"
     },
     {
       "source": "/app/tech",
-      "destination": "/app.html"
+      "destination": "/app"
     },
     {
       "source": "/app/finance",
-      "destination": "/app.html"
+      "destination": "/app"
     },
     {
       "source": "/app/financial",
-      "destination": "/app.html"
+      "destination": "/app"
     },
     {
       "source": "/app/(.*)",
-      "destination": "/app.html"
+      "destination": "/app"
     },
     {
       "source": "/tech",
-      "destination": "/index.html"
+      "destination": "/index"
     },
     {
       "source": "/finance",
-      "destination": "/index.html"
+      "destination": "/index"
     },
     {
       "source": "/financial",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/app",
-      "destination": "/app.html"
+      "destination": "/index"
     },
     {
       "source": "/dashboard",
-      "destination": "/app.html"
+      "destination": "/app"
     },
     {
       "source": "/settings",
-      "destination": "/settings.html"
+      "destination": "/settings"
     },
     {
       "source": "/landing",
-      "destination": "/index.html"
+      "destination": "/index"
     },
     {
       "source": "/",
-      "destination": "/index.html"
+      "destination": "/index"
     }
   ],
   "cleanUrls": true
