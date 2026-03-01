@@ -13587,7 +13587,8 @@ STABLECOIN PANEL .stablecoin-container {
 }
 
 .confirmation-overlay.active {
-  grid-area: check;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .runtime-secret-hint {
@@ -13631,17 +13632,9 @@ STABLECOIN PANEL .stablecoin-container {
 .confirmation-header {
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-
-  background: var(--surface);
-  border: 1px solid var(--overlay-medium);
-  border-radius: 16px;
-  width: 960px;
-  max-width: 96vw;
-  margin: 32px auto;
-  min-height: calc(100vh - 64px);
-  box-shadow: 0 24px 80px var(--shadow-color);
-  transform: translateY(12px);
-  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .country-brief-overlay.active .country-brief-page {

@@ -87,6 +87,10 @@
   ],
   "rewrites": [
     {
+      "source": "/app/:path*",
+      "destination": "/app.html"
+    },
+    {
       "source": "/tech",
       "destination": "/index.html"
     },
@@ -100,22 +104,6 @@
     },
     {
       "source": "/app",
-      "destination": "/app.html"
-    },
-    {
-      "source": "/app/tech",
-      "destination": "/app.html"
-    },
-    {
-      "source": "/app/finance",
-      "destination": "/app.html"
-    },
-    {
-      "source": "/app/financial",
-      "destination": "/app.html"
-    },
-    {
-      "source": "/app/:path*",
       "destination": "/app.html"
     },
     {
