@@ -3,6 +3,7 @@ import { X, Lock, User, ArrowRight, Loader2, UserPlus, Mail } from 'lucide-react
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { auth, googleProvider } from '../../lib/firebase';
+import { t, getCurrentLanguage } from '../../services/i18n';
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -34,7 +35,7 @@ async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUse
 
         if (email && adminEmails.includes(email.toLowerCase())) {
             console.log('[Auth] Admin login bypass triggered for:', email);
-            toast.success('ADMINISTRATIVE ACCESS GRANTED.');
+            toast.success(t('auth.toasts.adminAccess'));
             setTimeout(() => { window.location.href = '/app'; }, 800);
             return;
         }
@@ -43,13 +44,13 @@ async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUse
         const data = await response.json();
 
         if (data.active) {
-            toast.success('ACCESS GRANTED. ENTERING TERMINAL...');
+            toast.success(t('auth.toasts.accessGranted'));
             setTimeout(() => { window.location.href = '/app'; }, 800);
         } else {
             if (isNewUser) {
-                toast.success('IDENTITY CREATED. INITIATING SECURE CHECKOUT...');
+                toast.success(t('auth.toasts.identityCreatedCheckout'));
             } else {
-                toast.info('NO ACTIVE SUBSCRIPTION. INITIATING SECURE CHECKOUT...');
+                toast.info(t('auth.toasts.noSubCheckout'));
             }
 
             try {
@@ -111,13 +112,13 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             }
         } catch (error: any) {
             console.error('Auth error:', error);
-            let msg = 'AUTHENTICATION FAILED.';
-            if (error.code === 'auth/invalid-credential') msg = 'INVALID CREDENTIALS.';
-            if (error.code === 'auth/user-not-found') msg = 'OPERATIVE NOT FOUND.';
-            if (error.code === 'auth/email-already-in-use') msg = 'IDENTITY ALREADY REGISTERED.';
-            if (error.code === 'auth/weak-password') msg = 'PASSWORD SECURITY TOO LOW. MINIMUM 6 CHARACTERS.';
-            if (error.code === 'auth/too-many-requests') msg = 'TOO MANY ATTEMPTS. WAIT BEFORE RETRYING.';
-            if (error.code === 'auth/invalid-email') msg = 'INVALID EMAIL FORMAT.';
+            let msg = t('auth.toasts.authFailed');
+            if (error.code === 'auth/invalid-credential') msg = t('auth.toasts.invalidCreds');
+            if (error.code === 'auth/user-not-found') msg = t('auth.toasts.userNotFound');
+            if (error.code === 'auth/email-already-in-use') msg = t('auth.toasts.emailInUse');
+            if (error.code === 'auth/weak-password') msg = t('auth.toasts.weakPassword');
+            if (error.code === 'auth/too-many-requests') msg = t('auth.toasts.tooManyRequests');
+            if (error.code === 'auth/invalid-email') msg = t('auth.toasts.invalidEmail');
             toast.error(msg);
             setLoading(false);
         }
@@ -126,6 +127,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const handleGoogleSignIn = async () => {
         setGoogleLoading(true);
         try {
+            auth.languageCode = getCurrentLanguage() || 'en';
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
             const isNew = user.metadata.creationTime === user.metadata.lastSignInTime;
@@ -133,16 +135,16 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             await saveCustomerProfile(user.uid, user.email!, user.displayName, 'google', isNew ? 'register' : 'login');
 
             if (isNew) {
-                toast.success('IDENTITY CREATED VIA GOOGLE. WELCOME, OPERATIVE.');
+                toast.success(t('auth.toasts.googleCreated'));
             } else {
-                toast.success('GOOGLE IDENTITY CONFIRMED. ACCESS GRANTED.');
+                toast.success(t('auth.toasts.googleConfirmed'));
             }
 
             await checkSubscriptionAndRedirect(user.uid, user.email!, isNew);
         } catch (error: any) {
             console.error('Google auth error:', error);
             if (error.code !== 'auth/popup-closed-by-user') {
-                toast.error('GOOGLE AUTHENTICATION FAILED.');
+                toast.error(t('auth.toasts.googleFailed'));
             }
             setGoogleLoading(false);
         }
@@ -150,19 +152,20 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
     const handlePasswordReset = async () => {
         if (!email) {
-            toast.error('ENTER YOUR EMAIL FIRST.');
+            toast.error(t('auth.toasts.enterEmailFirst'));
             return;
         }
         setLoading(true);
         try {
+            auth.languageCode = getCurrentLanguage() || 'en';
             await sendPasswordResetEmail(auth, email);
-            toast.success('RESET LINK DISPATCHED. CHECK YOUR EMAIL.');
+            toast.success(t('auth.toasts.resetLinkSent'));
             setIsResetting(false);
         } catch (error: any) {
             if (error.code === 'auth/user-not-found') {
-                toast.error('NO OPERATIVE FOUND WITH THAT EMAIL.');
+                toast.error(t('auth.toasts.noOperativeEmail'));
             } else {
-                toast.error('FAILED TO SEND RESET LINK.');
+                toast.error(t('auth.toasts.resetFailed'));
             }
         } finally {
             setLoading(false);
@@ -201,14 +204,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             </div>
 
                             <h2 className="text-2xl font-bold text-center text-white mb-2 tracking-tight">
-                                {isResetting ? 'RESET PASSCODE' : isRegistering ? 'GEONEXUS REGISTRATION' : 'GEONEXUS ACCESS'}
+                                {isResetting ? t('auth.resetTitle') : isRegistering ? t('auth.registerTitle') : t('auth.loginTitle')}
                             </h2>
                             <p className="text-center text-zinc-500 text-sm mb-6 font-mono">
                                 {isResetting
-                                    ? 'Enter your email to receive a reset link.'
+                                    ? t('auth.resetSubtitle')
                                     : isRegistering
-                                        ? 'Create your secure identity for GeoNexus intelligence.'
-                                        : 'Enter your credentials to access the GeoNexus terminal.'}
+                                        ? t('auth.registerSubtitle')
+                                        : t('auth.loginSubtitle')}
                             </p>
 
                             {/* Google Sign-In Button */}
@@ -221,7 +224,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     {googleLoading ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin" />
-                                            AUTHENTICATING...
+                                            {t('auth.authenticating')}
                                         </>
                                     ) : (
                                         <>
@@ -231,7 +234,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                                                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                                             </svg>
-                                            CONTINUE WITH GOOGLE
+                                            {t('auth.continueGoogle')}
                                         </>
                                     )}
                                 </button>
@@ -241,7 +244,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             {!isResetting && (
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="flex-1 h-px bg-zinc-800" />
-                                    <span className="text-xs text-zinc-600 font-mono">OR</span>
+                                    <span className="text-xs text-zinc-600 font-mono">{t('auth.or')}</span>
                                     <div className="flex-1 h-px bg-zinc-800" />
                                 </div>
                             )}
@@ -249,7 +252,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             <form onSubmit={isResetting ? (e) => { e.preventDefault(); handlePasswordReset(); } : handleAuth} className="space-y-4">
                                 <div>
                                     <label htmlFor="email" className="block text-xs font-mono text-zinc-400 mb-1 ml-1">
-                                        {isResetting ? 'EMAIL' : 'OPERATIVE ID / EMAIL'}
+                                        {isResetting ? t('auth.emailLabelReset') : t('auth.emailLabel')}
                                     </label>
                                     <div className="relative">
                                         {isResetting
@@ -262,7 +265,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="w-full bg-zinc-950 border border-zinc-800 rounded p-3 pl-10 text-white placeholder-zinc-600 focus:outline-none focus:border-electric-500/50 transition-colors font-mono"
-                                            placeholder="operative@geonexus.com"
+                                            placeholder={t('auth.emailPlaceholder')}
                                             required
                                         />
                                     </div>
@@ -270,7 +273,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                                 {!isResetting && (
                                     <div>
-                                        <label htmlFor="password" className="block text-xs font-mono text-zinc-400 mb-1 ml-1">PASSCODE</label>
+                                        <label htmlFor="password" className="block text-xs font-mono text-zinc-400 mb-1 ml-1">{t('auth.passwordLabel')}</label>
                                         <div className="relative">
                                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                                             <input
@@ -295,7 +298,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                             onClick={() => setIsResetting(true)}
                                             className="text-xs font-mono text-zinc-500 hover:text-electric-500 transition-colors"
                                         >
-                                            FORGOT PASSCODE?
+                                            {t('auth.forgotPassword')}
                                         </button>
                                     </div>
                                 )}
@@ -308,11 +311,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     {loading ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin" />
-                                            {isResetting ? 'SENDING...' : isRegistering ? 'REGISTERING...' : 'AUTHENTICATING...'}
+                                            {isResetting ? t('auth.btnSending') : isRegistering ? t('auth.btnRegistering') : t('auth.authenticating')}
                                         </>
                                     ) : (
                                         <>
-                                            {isResetting ? 'SEND RESET LINK' : isRegistering ? 'CREATE IDENTITY' : 'AUTHENTICATE'}
+                                            {isResetting ? t('auth.btnReset') : isRegistering ? t('auth.btnRegister') : t('auth.btnLogin')}
                                             <ArrowRight className="w-4 h-4" />
                                         </>
                                     )}
@@ -325,7 +328,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                         onClick={() => setIsResetting(false)}
                                         className="text-xs font-mono text-zinc-500 hover:text-electric-500 transition-colors flex items-center justify-center gap-2 mx-auto"
                                     >
-                                        ← BACK TO LOGIN
+                                        {t('auth.backToLogin')}
                                     </button>
                                 ) : (
                                     <button
@@ -333,11 +336,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                         className="text-xs font-mono text-zinc-500 hover:text-electric-500 transition-colors flex items-center justify-center gap-2 mx-auto"
                                     >
                                         {isRegistering ? (
-                                            <>ALREADY HAVE AN IDENTITY? LOGIN</>
+                                            <>{t('auth.alreadyHaveIdentity')}</>
                                         ) : (
                                             <>
                                                 <UserPlus className="w-3 h-3" />
-                                                NO IDENTITY? REGISTER NEW OPERATIVE
+                                                {t('auth.noIdentity')}
                                             </>
                                         )}
                                     </button>
@@ -346,7 +349,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                             <div className="mt-8 text-center">
                                 <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-widest">
-                                    Restricted System. Unauthorized access is prohibited.
+                                    {t('auth.restricted')}
                                 </p>
                             </div>
                         </div>
