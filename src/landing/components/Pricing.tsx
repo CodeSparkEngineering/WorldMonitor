@@ -65,6 +65,19 @@ export default function Pricing() {
                 return;
             }
 
+            // PRE-CHECKOUT PROTECTION: Check if user already has an active subscription
+            const checkResponse = await fetch(`/api/check-subscription?uid=${user.uid}`);
+            const checkData = await checkResponse.json();
+
+            if (checkData.active) {
+                toast.success(t('auth.toasts.accessGranted') || 'ACCESS GRANTED. REDIRECTING TO TERMINAL...');
+                setTimeout(() => {
+                    window.location.href = '/app';
+                }, 800);
+                setLoadingPlan(null);
+                return;
+            }
+
             // Open new window immediately to avoid popup blockers
             const newWindow = window.open('', '_blank');
 
