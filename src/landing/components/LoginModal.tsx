@@ -16,16 +16,23 @@ interface LoginModalProps {
     onClose: () => void;
 }
 
-async function saveCustomerProfile(uid: string, email: string, displayName: string | null, provider: string, action: string) {
-    try {
-        await fetch('/api/customer-profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uid, email, displayName, provider, action }),
+function saveCustomerProfile(uid: string, email: string, displayName: string | null, provider: string, action: string) {
+    // Fire-and-forget: do NOT await this — the customer-profile API can be slow
+    // and must never block the login flow
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    fetch('/api/customer-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, email, displayName, provider, action }),
+        signal: controller.signal,
+    })
+        .then(() => clearTimeout(timeoutId))
+        .catch((e) => {
+            clearTimeout(timeoutId);
+            console.warn('[Auth] Failed to save customer profile (non-blocking):', e.message);
         });
-    } catch (e) {
-        console.warn('[Auth] Failed to save customer profile:', e);
-    }
 }
 
 async function checkSubscriptionAndRedirect(
@@ -125,12 +132,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         try {
             if (isRegistering) {
                 const cred = await createUserWithEmailAndPassword(auth, email, password);
-                await saveCustomerProfile(cred.user.uid, email, null, 'email', 'register');
+                saveCustomerProfile(cred.user.uid, email, null, 'email', 'register');
                 const result = await checkSubscriptionAndRedirect(cred.user.uid, email, true, t);
                 willRedirect = result === 'redirecting';
             } else {
                 const cred = await signInWithEmailAndPassword(auth, email, password);
-                await saveCustomerProfile(cred.user.uid, email, cred.user.displayName, 'email', 'login');
+                saveCustomerProfile(cred.user.uid, email, cred.user.displayName, 'email', 'login');
                 const result = await checkSubscriptionAndRedirect(cred.user.uid, email, false, t);
                 willRedirect = result === 'redirecting';
             }
@@ -159,7 +166,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             const user = result.user;
             const isNew = user.metadata.creationTime === user.metadata.lastSignInTime;
 
-            await saveCustomerProfile(user.uid, user.email!, user.displayName, 'google', isNew ? 'register' : 'login');
+            saveCustomerProfile(user.uid, user.email!, user.displayName, 'google', isNew ? 'register' : 'login');
 
             if (isNew) {
                 toast.success(t('auth.toasts.googleCreated'));
