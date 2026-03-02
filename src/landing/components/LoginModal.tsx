@@ -3,7 +3,7 @@ import { X, Lock, User, ArrowRight, Loader2, UserPlus, Mail } from 'lucide-react
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { auth, googleProvider } from '../../lib/firebase';
-import { t, getCurrentLanguage } from '../../services/i18n';
+import { useLanguage } from '../i18n/LanguageContext';
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -28,7 +28,7 @@ async function saveCustomerProfile(uid: string, email: string, displayName: stri
     }
 }
 
-async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUser: boolean) {
+async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUser: boolean, t: (path: string) => string) {
     try {
         // ADMIN BYPASS: Bypass subscription check for specific admin emails
         const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase());
@@ -89,6 +89,7 @@ async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUse
 }
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+    const { t, language } = useLanguage();
     const [isRegistering, setIsRegistering] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -104,11 +105,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             if (isRegistering) {
                 const cred = await createUserWithEmailAndPassword(auth, email, password);
                 await saveCustomerProfile(cred.user.uid, email, null, 'email', 'register');
-                await checkSubscriptionAndRedirect(cred.user.uid, email, true);
+                await checkSubscriptionAndRedirect(cred.user.uid, email, true, t);
             } else {
                 const cred = await signInWithEmailAndPassword(auth, email, password);
                 await saveCustomerProfile(cred.user.uid, email, cred.user.displayName, 'email', 'login');
-                await checkSubscriptionAndRedirect(cred.user.uid, email, false);
+                await checkSubscriptionAndRedirect(cred.user.uid, email, false, t);
             }
         } catch (error: any) {
             console.error('Auth error:', error);
@@ -127,7 +128,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const handleGoogleSignIn = async () => {
         setGoogleLoading(true);
         try {
-            auth.languageCode = getCurrentLanguage() || 'en';
+            auth.languageCode = language || 'en';
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
             const isNew = user.metadata.creationTime === user.metadata.lastSignInTime;
@@ -140,7 +141,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 toast.success(t('auth.toasts.googleConfirmed'));
             }
 
-            await checkSubscriptionAndRedirect(user.uid, user.email!, isNew);
+            await checkSubscriptionAndRedirect(user.uid, user.email!, isNew, t);
         } catch (error: any) {
             console.error('Google auth error:', error);
             if (error.code !== 'auth/popup-closed-by-user') {
@@ -157,7 +158,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }
         setLoading(true);
         try {
-            auth.languageCode = getCurrentLanguage() || 'en';
+            auth.languageCode = language || 'en';
             await sendPasswordResetEmail(auth, email);
             toast.success(t('auth.toasts.resetLinkSent'));
             setIsResetting(false);
