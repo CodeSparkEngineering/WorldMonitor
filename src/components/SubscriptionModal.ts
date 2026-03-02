@@ -22,13 +22,13 @@ export class SubscriptionModal {
         <div class="form-group">
           <label>Select Plan</label>
           <select id="sub-plan">
-            <option value="monthly">Monthly Access ($9.99/mo)</option>
-            <option value="annual">Annual Access ($79.99/yr)</option>
+            <option value="monthly">Monthly Access (€2,99/mo)</option>
+            <option value="annual">Annual Access (€22,90/yr)</option>
           </select>
         </div>
         <div class="plan-price">
-              <span class="currency">$</span>
-              <span class="amount">9.99</span>
+              <span class="currency">€</span>
+              <span class="amount">2,99</span>
               <span class="period">/month</span>
             </div>
             <ul class="plan-features">
@@ -45,14 +45,14 @@ export class SubscriptionModal {
           </div>
 
           <div class="plan-card plan-annual" data-plan="annual">
-            <div class="plan-badge best-value">Best Value - Save 33%</div>
+            <div class="plan-badge best-value">Best Value - Save 36%</div>
             <h3>Annual</h3>
             <div class="plan-price">
-              <span class="currency">$</span>
-              <span class="amount">79.99</span>
+              <span class="currency">€</span>
+              <span class="amount">22,90</span>
               <span class="period">/year</span>
             </div>
-            <div class="plan-savings">Save $40/year</div>
+            <div class="plan-savings">Save ~36% / €12,98/year</div>
             <ul class="plan-features">
               <li>✓ Everything in Monthly</li>
               <li>✓ Priority support</li>

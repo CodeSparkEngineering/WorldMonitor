@@ -14,7 +14,7 @@ export default function Pricing() {
     const tiers = [
         {
             name: t('pricing.tiers.analyst.name'),
-            price: billingCycle === 'monthly' ? "$9.99" : "$79.99",
+            price: billingCycle === 'monthly' ? "€2,99" : "€22,90",
             period: billingCycle === 'monthly' ? t('pricing.tiers.analyst.period_month') : t('pricing.tiers.analyst.period_year'),
             description: t('pricing.tiers.analyst.desc'),
             features: t('pricing.tiers.analyst.features'),
