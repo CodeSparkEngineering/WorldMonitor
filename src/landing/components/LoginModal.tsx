@@ -28,21 +28,31 @@ async function saveCustomerProfile(uid: string, email: string, displayName: stri
     }
 }
 
-async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUser: boolean, t: (path: string) => string) {
+async function checkSubscriptionAndRedirect(
+    uid: string,
+    email: string,
+    isNewUser: boolean,
+    t: (path: string) => string
+): Promise<'redirecting' | 'error'> {
+    const timeout = (ms: number) =>
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+
     try {
         console.log(`[AuthDebug] Starting check for ${email} (UID: ${uid})`);
 
-        // ADMIN BYPASS: Bypass subscription check for specific admin emails
+        // ADMIN BYPASS
         const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase());
-
         if (email && adminEmails.includes(email.toLowerCase())) {
             console.log('[AuthDebug] Admin login bypass triggered.');
             toast.success(t('auth.toasts.adminAccess'));
             setTimeout(() => { window.location.href = '/app'; }, 800);
-            return;
+            return 'redirecting';
         }
 
-        const response = await fetch(`/api/check-subscription?uid=${uid}`);
+        const response = await Promise.race([
+            fetch(`/api/check-subscription?uid=${uid}`),
+            timeout(10000),
+        ]);
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
 
         const data = await response.json();
@@ -52,6 +62,7 @@ async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUse
             console.log('[AuthDebug] Active user. Redirecting to /app');
             toast.success(t('auth.toasts.accessGranted'));
             setTimeout(() => { window.location.href = '/app'; }, 800);
+            return 'redirecting';
         } else {
             console.log('[AuthDebug] Inactive user. Redirecting to checkout...');
             if (isNewUser) {
@@ -66,35 +77,34 @@ async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUse
                     ? import.meta.env.VITE_STRIPE_ANNUAL_PRICE_ID
                     : import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID;
 
-                console.log(`[AuthDebug] Initiating Checkout Session for ${priceId}`);
-
-                const res = await fetch('/api/create-checkout-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ priceId, uid: uid, email: email })
-                });
+                const res = await Promise.race([
+                    fetch('/api/create-checkout-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ priceId, uid, email }),
+                    }),
+                    timeout(10000),
+                ]);
                 const checkoutData = await res.json();
 
                 if (checkoutData.url) {
-                    console.log('[AuthDebug] Redirecting to Stripe:', checkoutData.url);
                     setTimeout(() => { window.location.href = checkoutData.url; }, 800);
+                    return 'redirecting';
                 } else {
                     throw new Error(checkoutData.error || 'Failed to generate checkout URL');
                 }
             } catch (e) {
                 console.error('[AuthDebug] Checkout session creation failed:', e);
                 toast.error('Payment system error. Redirecting to pricing.');
-                setTimeout(() => {
-                    window.location.href = '/#pricing';
-                }, 1500);
+                setTimeout(() => { window.location.href = '/#pricing'; }, 1500);
+                return 'redirecting';
             }
         }
     } catch (err) {
         console.error('[AuthDebug] Critical check error:', err);
         toast.error('Identity verified. Please select a plan to continue.');
-        setTimeout(() => {
-            window.location.href = '/#pricing';
-        }, 1500);
+        setTimeout(() => { window.location.href = '/#pricing'; }, 1500);
+        return 'error';
     }
 }
 
@@ -110,16 +120,19 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        let willRedirect = false;
 
         try {
             if (isRegistering) {
                 const cred = await createUserWithEmailAndPassword(auth, email, password);
                 await saveCustomerProfile(cred.user.uid, email, null, 'email', 'register');
-                await checkSubscriptionAndRedirect(cred.user.uid, email, true, t);
+                const result = await checkSubscriptionAndRedirect(cred.user.uid, email, true, t);
+                willRedirect = result === 'redirecting';
             } else {
                 const cred = await signInWithEmailAndPassword(auth, email, password);
                 await saveCustomerProfile(cred.user.uid, email, cred.user.displayName, 'email', 'login');
-                await checkSubscriptionAndRedirect(cred.user.uid, email, false, t);
+                const result = await checkSubscriptionAndRedirect(cred.user.uid, email, false, t);
+                willRedirect = result === 'redirecting';
             }
         } catch (error: any) {
             console.error('Auth error:', error);
@@ -131,12 +144,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             if (error.code === 'auth/too-many-requests') msg = t('auth.toasts.tooManyRequests');
             if (error.code === 'auth/invalid-email') msg = t('auth.toasts.invalidEmail');
             toast.error(msg);
-            setLoading(false);
+        } finally {
+            // Only reset loading if we are NOT about to navigate away
+            if (!willRedirect) setLoading(false);
         }
     };
 
     const handleGoogleSignIn = async () => {
         setGoogleLoading(true);
+        let willRedirect = false;
         try {
             auth.languageCode = language || 'en';
             const result = await signInWithPopup(auth, googleProvider);
@@ -151,13 +167,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 toast.success(t('auth.toasts.googleConfirmed'));
             }
 
-            await checkSubscriptionAndRedirect(user.uid, user.email!, isNew, t);
+            const res = await checkSubscriptionAndRedirect(user.uid, user.email!, isNew, t);
+            willRedirect = res === 'redirecting';
         } catch (error: any) {
             console.error('Google auth error:', error);
             if (error.code !== 'auth/popup-closed-by-user') {
                 toast.error(t('auth.toasts.googleFailed'));
             }
-            setGoogleLoading(false);
+        } finally {
+            if (!willRedirect) setGoogleLoading(false);
         }
     };
 
