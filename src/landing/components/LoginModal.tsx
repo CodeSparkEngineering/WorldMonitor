@@ -30,23 +30,30 @@ async function saveCustomerProfile(uid: string, email: string, displayName: stri
 
 async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUser: boolean, t: (path: string) => string) {
     try {
+        console.log(`[AuthDebug] Starting check for ${email} (UID: ${uid})`);
+
         // ADMIN BYPASS: Bypass subscription check for specific admin emails
         const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase());
 
         if (email && adminEmails.includes(email.toLowerCase())) {
-            console.log('[Auth] Admin login bypass triggered for:', email);
+            console.log('[AuthDebug] Admin login bypass triggered.');
             toast.success(t('auth.toasts.adminAccess'));
             setTimeout(() => { window.location.href = '/app'; }, 800);
             return;
         }
 
         const response = await fetch(`/api/check-subscription?uid=${uid}`);
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
         const data = await response.json();
+        console.log(`[AuthDebug] Subscription Status:`, data);
 
         if (data.active) {
+            console.log('[AuthDebug] Active user. Redirecting to /app');
             toast.success(t('auth.toasts.accessGranted'));
             setTimeout(() => { window.location.href = '/app'; }, 800);
         } else {
+            console.log('[AuthDebug] Inactive user. Redirecting to checkout...');
             if (isNewUser) {
                 toast.success(t('auth.toasts.identityCreatedCheckout'));
             } else {
@@ -59,6 +66,8 @@ async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUse
                     ? import.meta.env.VITE_STRIPE_ANNUAL_PRICE_ID
                     : import.meta.env.VITE_STRIPE_MONTHLY_PRICE_ID;
 
+                console.log(`[AuthDebug] Initiating Checkout Session for ${priceId}`);
+
                 const res = await fetch('/api/create-checkout-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -67,24 +76,25 @@ async function checkSubscriptionAndRedirect(uid: string, email: string, isNewUse
                 const checkoutData = await res.json();
 
                 if (checkoutData.url) {
+                    console.log('[AuthDebug] Redirecting to Stripe:', checkoutData.url);
                     setTimeout(() => { window.location.href = checkoutData.url; }, 800);
                 } else {
-                    throw new Error('No checkout URL');
+                    throw new Error(checkoutData.error || 'Failed to generate checkout URL');
                 }
             } catch (e) {
-                // If API fails, reload page to reset modal state at least
+                console.error('[AuthDebug] Checkout session creation failed:', e);
+                toast.error('Payment system error. Redirecting to pricing.');
                 setTimeout(() => {
                     window.location.href = '/#pricing';
-                    setTimeout(() => window.location.reload(), 100);
-                }, 800);
+                }, 1500);
             }
         }
-    } catch {
-        // If check fails, default to pricing and reload
+    } catch (err) {
+        console.error('[AuthDebug] Critical check error:', err);
+        toast.error('Identity verified. Please select a plan to continue.');
         setTimeout(() => {
             window.location.href = '/#pricing';
-            setTimeout(() => window.location.reload(), 100);
-        }, 800);
+        }, 1500);
     }
 }
 

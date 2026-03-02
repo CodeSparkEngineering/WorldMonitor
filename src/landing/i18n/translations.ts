@@ -116,9 +116,9 @@ export const translations = {
             title_suffix: "PROTOCOLS",
             description: "Choose between monthly intelligence access or full system acquisition for sovereign control.",
             login_required: "PLEASE CREATE AN IDENTITY OR LOGIN BEFORE SUBSCRIBING.",
-            monthly: "MONTHLY",
             annual: "ANNUAL",
             save: "-30%",
+            promotional: "PROMOTIONAL OFFER",
             tiers: {
                 analyst: {
                     name: "ANALYST_ACCESS",
@@ -349,9 +349,9 @@ export const translations = {
             title_suffix: "ACESSO",
             description: "Escolha entre acesso mensal de inteligência ou aquisição completa do sistema para controle soberano.",
             login_required: "POR FAVOR, CRIE UMA IDENTIDADE OU FAÇA LOGIN ANTES DE ASSINAR.",
-            monthly: "MENSAL",
             annual: "ANUAL",
             save: "-30%",
+            promotional: "OFERTA DE LANÇAMENTO",
             tiers: {
                 analyst: {
                     name: "ACESSO_ANALISTA",
@@ -582,9 +582,9 @@ export const translations = {
             title_suffix: "ACCESO",
             description: "Elija entre acceso mensual de inteligencia o adquisición completa del sistema para control soberano.",
             login_required: "POR FAVOR, CREE UNA IDENTIDAD O INICIE SESIÓN ANTES DE SUSCRIBIRSE.",
-            monthly: "MENSUAL",
             annual: "ANUAL",
             save: "-30%",
+            promotional: "OFERTA DE LANZAMIENTO",
             tiers: {
                 analyst: {
                     name: "ACCESO_ANALISTA",

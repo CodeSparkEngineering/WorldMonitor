@@ -1852,6 +1852,7 @@ export class App {
           <button class="fullscreen-btn" id="fullscreenBtn" title="${t('header.fullscreen')}">⛶</button>
           <button class="settings-btn" id="settingsBtn">⚙ ${t('header.settings')}</button>
           <button class="sources-btn" id="sourcesBtn">📡 ${t('header.sources')}</button>
+          <button class="cancel-plan-btn" id="cancelPlanBtn" title="${t('header.cancelPlan') || 'Cancel Subscription'}">✕ ${t('header.cancelPlan') || 'CANCEL PLAN'}</button>
           <button class="logout-btn" id="logoutBtn" title="Sign Out">LOGOUT</button>
         </div>
       </div>
@@ -2587,6 +2588,53 @@ export class App {
       if ((e.target as HTMLElement)?.classList?.contains('modal-overlay')) {
         document.getElementById('settingsModal')?.classList.remove('active');
       }
+    });
+
+    // Cancel Plan button
+    const cancelPlanBtn = document.getElementById('cancelPlanBtn');
+    cancelPlanBtn?.addEventListener('click', () => {
+      this.confirmationModal?.show(
+        t('header.cancelPlanTitle') || 'Cancel Subscription',
+        t('header.cancelPlanMsg') || 'Are you sure you want to cancel your subscription? You will continue to have access until the end of your current billing period.',
+        async () => {
+          try {
+            const uid = authService.getUser()?.uid;
+            if (!uid) {
+              alert('User not authenticated');
+              return;
+            }
+
+            cancelPlanBtn.textContent = '⏳...';
+            cancelPlanBtn.setAttribute('disabled', 'true');
+
+            const res = await fetch('/api/cancel-subscription', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ uid }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+              const endDate = data.currentPeriodEnd
+                ? new Date(data.currentPeriodEnd * 1000).toLocaleDateString()
+                : '';
+              alert((t('header.cancelPlanSuccess') || 'Subscription cancelled. Access until: ') + endDate);
+              cancelPlanBtn.textContent = '✓ ' + (t('header.planCancelled') || 'CANCELLED');
+              cancelPlanBtn.classList.add('cancelled');
+            } else {
+              alert(data.error || 'Failed to cancel subscription.');
+              cancelPlanBtn.textContent = '✕ ' + (t('header.cancelPlan') || 'CANCEL PLAN');
+              cancelPlanBtn.removeAttribute('disabled');
+            }
+          } catch (err) {
+            console.error('[App] Cancel subscription error:', err);
+            alert('Error cancelling subscription. Please try again.');
+            cancelPlanBtn.textContent = '✕ ' + (t('header.cancelPlan') || 'CANCEL PLAN');
+            cancelPlanBtn.removeAttribute('disabled');
+          }
+        }
+      );
     });
 
     // Logout button

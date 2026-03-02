@@ -24,25 +24,33 @@ export default async function handler(req) {
         }
 
         const redis = await getRedis();
-        if (!redis) {
-            // If Redis is down, we might want to fail open or closed depending on policy
-            // Failing closed for security
-            return new Response(JSON.stringify({ active: false, error: 'Cache unavailable' }), {
-                status: 503,
-                headers: { 'Content-Type': 'application/json' },
-            });
-        }
+        let status = 'none';
 
-        const status = await redis.get(`sub:${uid}`);
+        try {
+            // New Primary Source: Firestore REST
+            const { getFirestoreDoc } = await import('./_firestore.js');
+            const doc = await getFirestoreDoc('subscriptions', uid);
+            if (doc && doc.status) {
+                status = doc.status;
+                console.log(`[Auth] Firestore hit: ${uid} -> ${status}`);
+            } else if (redis) {
+                // Secondary Source: Upstash Redis (Legacy)
+                status = await redis.get(`sub:${uid}`);
+                console.log(`[Auth] Redis fallback: ${uid} -> ${status}`);
+            }
+        } catch (dbError) {
+            console.error('[Auth] Database read failed:', dbError);
+            if (redis) {
+                status = await redis.get(`sub:${uid}`);
+            }
+        }
 
         return new Response(JSON.stringify({
             active: status === 'active',
             status: status || 'none'
         }), {
             status: 200,
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
         });
     } catch (error) {
         console.error('[Auth] Subscription check error:', error);

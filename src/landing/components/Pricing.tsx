@@ -182,7 +182,7 @@ export default function Pricing() {
                         >
                             {tier.highlight && (
                                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-electric-500 text-white text-[10px] sm:text-xs font-bold px-3 sm:px-4 py-1.5 rounded-full font-mono shadow-[0_0_20px_rgba(0,128,255,0.4)] tracking-wider whitespace-nowrap">
-                                    RECOMMENDED
+                                    {t('pricing.promotional')}
                                 </div>
                             )}
 
@@ -199,12 +199,19 @@ export default function Pricing() {
                                 )}>{tier.name}</h3>
                             </div>
 
-                            <div className="flex items-baseline mb-8">
-                                <span className={clsx(
-                                    "text-5xl font-bold tracking-tight",
-                                    tier.highlight ? "text-white text-shadow-glow" : "text-gray-200"
-                                )}>{tier.price}</span>
-                                <span className="ml-2 text-gray-500 text-sm font-mono">{tier.period}</span>
+                            <div className="flex flex-col mb-8">
+                                <div className="flex items-baseline">
+                                    <span className={clsx(
+                                        "text-5xl font-bold tracking-tight",
+                                        tier.highlight ? "text-white text-shadow-glow" : "text-gray-200"
+                                    )}>{tier.price}</span>
+                                    <span className="ml-2 text-gray-500 text-sm font-mono">{tier.period}</span>
+                                </div>
+                                {tier.highlight && (
+                                    <span className="text-electric-400 text-[10px] font-mono font-bold mt-2 tracking-widest animate-pulse">
+                                        // {t('pricing.promotional')}
+                                    </span>
+                                )}
                             </div>
 
                             <p className="text-gray-400 text-sm mb-8 border-b border-zinc-800 pb-8 flex-grow leading-relaxed">

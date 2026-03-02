@@ -1599,7 +1599,12 @@
     "filterSources": "Filtrar fontes...",
     "sourcesEnabled": "{{enabled}}/{{total}} ativado",
     "finance": "FINANCE",
-    "toggleTheme": "Alternar modo claro/escuro"
+    "toggleTheme": "Alternar modo claro/escuro",
+    "cancelPlan": "CANCELAR PLANO",
+    "cancelPlanTitle": "Cancelar Assinatura",
+    "cancelPlanMsg": "Tem certeza que deseja cancelar sua assinatura? Você continuará tendo acesso até o final do seu período de cobrança atual.",
+    "cancelPlanSuccess": "Assinatura cancelada. Acesso até: ",
+    "planCancelled": "CANCELADO"
   },
   "app": {
     "title": "GeoNexus",

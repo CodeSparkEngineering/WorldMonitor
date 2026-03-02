@@ -111,7 +111,12 @@
     "filterSources": "Filter sources...",
     "sourcesEnabled": "{{enabled}}/{{total}} enabled",
     "finance": "FINANCE",
-    "toggleTheme": "Toggle dark/light mode"
+    "toggleTheme": "Toggle dark/light mode",
+    "cancelPlan": "CANCEL PLAN",
+    "cancelPlanTitle": "Cancel Subscription",
+    "cancelPlanMsg": "Are you sure you want to cancel your subscription? You will continue to have access until the end of your current billing period.",
+    "cancelPlanSuccess": "Subscription cancelled. Access until: ",
+    "planCancelled": "CANCELLED"
   },
   "panels": {
     "liveNews": "Live News",

@@ -1,19 +1,14 @@
 import { getRedis } from './_upstash-cache.js';
+import { dualWriteProfile } from './_firebase-admin.js';
 
 export const config = {
-    runtime: 'edge',
+    runtime: 'nodejs',
 };
 
 const CUSTOMER_TTL = 365 * 24 * 60 * 60; // 1 year
 
 export default async function handler(req) {
     const redis = await getRedis();
-    if (!redis) {
-        return new Response(JSON.stringify({ error: 'Database unavailable' }), {
-            status: 503,
-            headers: { 'Content-Type': 'application/json' },
-        });
-    }
 
     // GET: Retrieve customer profile
     if (req.method === 'GET') {
@@ -28,8 +23,13 @@ export default async function handler(req) {
         }
 
         try {
-            const profile = await redis.get(`customer:${uid}`);
-            const subStatus = await redis.get(`sub:${uid}`);
+            // Priority: Firestore (REST for now, or Admin if we want to change)
+            const { getFirestoreDoc } = await import('./_firestore.js');
+            const firestoreProfile = await getFirestoreDoc('customers', uid);
+
+            const profile = firestoreProfile || (redis ? await redis.get(`customer:${uid}`) : null);
+            const subStatusDoc = await getFirestoreDoc('subscriptions', uid);
+            const subStatus = (subStatusDoc && subStatusDoc.status) || (redis ? await redis.get(`sub:${uid}`) : 'none');
 
             return new Response(JSON.stringify({
                 profile: profile || null,
@@ -39,13 +39,10 @@ export default async function handler(req) {
                 },
             }), {
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'private, max-age=30',
-                },
+                headers: { 'Content-Type': 'application/json' },
             });
         } catch (error) {
-            console.error('[Customer] Profile fetch error:', error);
+            console.error('[Customer] Fetch error:', error);
             return new Response(JSON.stringify({ error: error.message }), {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' },
@@ -66,13 +63,11 @@ export default async function handler(req) {
                 });
             }
 
-            // Fetch existing profile
-            const existing = await redis.get(`customer:${uid}`);
+            const existing = redis ? await redis.get(`customer:${uid}`) : null;
             const now = new Date().toISOString();
 
             let profile;
             if (existing && typeof existing === 'object') {
-                // Update existing profile
                 profile = {
                     ...existing,
                     email,
@@ -82,7 +77,6 @@ export default async function handler(req) {
                     provider: provider || existing.provider || 'email',
                 };
             } else {
-                // Create new profile
                 profile = {
                     uid,
                     email,
@@ -100,10 +94,11 @@ export default async function handler(req) {
                 };
             }
 
-            await redis.set(`customer:${uid}`, profile, { ex: CUSTOMER_TTL });
-
-            // Also maintain an email→uid index for lookups
-            await redis.set(`email:${email}`, uid, { ex: CUSTOMER_TTL });
+            // Dual Write to Redis and Firestore
+            await Promise.all([
+                dualWriteProfile(uid, profile, redis),
+                redis ? redis.set(`email:${email}`, uid, { ex: CUSTOMER_TTL }) : Promise.resolve()
+            ]);
 
             console.log(`[Customer] ${action === 'register' ? 'Registered' : 'Updated'}: ${email} (${uid})`);
 
@@ -112,7 +107,7 @@ export default async function handler(req) {
                 headers: { 'Content-Type': 'application/json' },
             });
         } catch (error) {
-            console.error('[Customer] Profile save error:', error);
+            console.error('[Customer] Save error:', error);
             return new Response(JSON.stringify({ error: error.message }), {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' },

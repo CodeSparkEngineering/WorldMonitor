@@ -1,8 +1,9 @@
 import { getRedis } from './_upstash-cache.js';
 import { Resend } from 'resend';
+import { dualWriteSubscription, dualWriteProfile } from './_firebase-admin.js';
 
 export const config = {
-    runtime: 'edge',
+    runtime: 'nodejs',
 };
 
 const CUSTOMER_TTL = 365 * 24 * 60 * 60; // 1 year
@@ -30,11 +31,9 @@ export default async function handler(req) {
             return new Response('No signature', { status: 400 });
         }
 
-        // Parse event (Simplified for edge runtime without stripe library)
         const event = JSON.parse(body);
         const redis = await getRedis();
 
-        // Handle different event types
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
@@ -44,24 +43,16 @@ export default async function handler(req) {
                 const stripeCustomerId = session.customer;
                 const subscriptionId = session.subscription;
 
-                // Fallback: If UID is missing but we have an email, try to find the user in Redis
                 if (!uid && email && redis) {
-                    console.log(`[Stripe] UID missing, attempting email lookup for: ${email}`);
                     const emailKey = email.toLowerCase().trim();
                     const foundUid = await redis.get(`email:${emailKey}`);
-                    if (foundUid) {
-                        uid = foundUid;
-                        console.log(`[Stripe] Found UID via email lookup: ${uid}`);
-                    }
+                    if (foundUid) uid = foundUid;
                 }
 
-                if (uid && redis) {
-                    console.log(`[Stripe] Granting access to user: ${uid}`);
-                    // Set subscription status for 32 days (buffer for monthly)
-                    await redis.set(`sub:${uid}`, 'active', { ex: 32 * 24 * 60 * 60 });
+                if (uid) {
+                    console.log(`[Stripe] Granting access to: ${uid}`);
 
-                    // Update customer profile with Stripe data
-                    const existing = await redis.get(`customer:${uid}`);
+                    const existing = redis ? await redis.get(`customer:${uid}`) : null;
                     const now = new Date().toISOString();
 
                     const profile = (existing && typeof existing === 'object')
@@ -93,19 +84,14 @@ export default async function handler(req) {
                             expiresAt: null,
                         };
 
-                    await redis.set(`customer:${uid}`, profile, { ex: CUSTOMER_TTL });
+                    // Dual Write
+                    await Promise.all([
+                        dualWriteSubscription(uid, 'active', redis),
+                        dualWriteProfile(uid, profile, redis),
+                        stripeCustomerId && redis ? redis.set(`stripe:${stripeCustomerId}`, uid, { ex: CUSTOMER_TTL }) : Promise.resolve()
+                    ]);
 
-                    // Also map stripeCustomerId → uid for webhook lookups
-                    if (stripeCustomerId) {
-                        await redis.set(`stripe:${stripeCustomerId}`, uid, { ex: CUSTOMER_TTL });
-                    }
-
-                    console.log(`[Stripe] Customer profile updated: ${email || uid}`);
-
-                    // Send Automated Access Message via Resend
                     if (resend && email) {
-                        console.log(`[Stripe] Dispatching access credentials to ${email}...`);
-
                         try {
                             await resend.emails.send({
                                 from: 'GeoNexus <onboarding@resend.dev>',
@@ -119,22 +105,13 @@ export default async function handler(req) {
                                             <p style="margin: 0;"><strong>STATUS:</strong> OPERACIONAL</p>
                                             <p style="margin: 5px 0 0 0;"><strong>TERMINAL:</strong> <a href="${req.headers.get('origin') || ''}/app" style="color: #0080ff; text-decoration: none;">Acessar Painel Global</a></p>
                                         </div>
-                                        <p style="font-size: 14px;">Use suas credenciais criadas no cadastro para acessar o terminal.</p>
-                                        <p style="font-size: 12px; color: #666; margin-top: 40px; border-top: 1px solid #1a1a1a; padding-top: 20px;">
-                                            SISTEMA RESTRITO GEONEXUS. USO EXCLUSIVO POR OPERATIVOS AUTORIZADOS.
-                                        </p>
                                     </div>
                                 `
                             });
-                            console.log(`[Stripe] Welcome email sent to ${email}`);
                         } catch (emailErr) {
-                            console.error('[Stripe] Failed to send welcome email:', emailErr.message);
+                            console.error('[Stripe] Email error:', emailErr.message);
                         }
-                    } else {
-                        console.warn('[Stripe] Skipped email sending: Resend not configured or customer email missing');
                     }
-                } else {
-                    console.warn('[Stripe] Missing UID or Redis in checkout.session.completed');
                 }
                 break;
             }
@@ -143,25 +120,20 @@ export default async function handler(req) {
             case 'customer.subscription.updated': {
                 const subscription = event.data.object;
                 const stripeCustomerId = subscription.customer;
-                console.log('[Stripe] Subscription status:', subscription.status);
-
                 if (redis && stripeCustomerId) {
-                    // Look up uid from stripeCustomerId
                     const uid = await redis.get(`stripe:${stripeCustomerId}`);
                     if (uid) {
-                        const isActive = subscription.status === 'active' || subscription.status === 'trialing';
-                        if (isActive) {
-                            await redis.set(`sub:${uid}`, 'active', { ex: 32 * 24 * 60 * 60 });
-                        }
+                        const status = subscription.status;
+                        const isActive = status === 'active' || status === 'trialing';
 
-                        // Update customer profile
+                        await dualWriteSubscription(uid, isActive ? 'active' : status, redis);
+
                         const existing = await redis.get(`customer:${uid}`);
                         if (existing && typeof existing === 'object') {
-                            existing.subscriptionStatus = subscription.status;
+                            existing.subscriptionStatus = status;
                             existing.subscriptionId = subscription.id;
-                            await redis.set(`customer:${uid}`, existing, { ex: CUSTOMER_TTL });
+                            await dualWriteProfile(uid, existing, redis);
                         }
-                        console.log(`[Stripe] Subscription ${subscription.status} for uid: ${uid}`);
                     }
                 }
                 break;
@@ -170,23 +142,16 @@ export default async function handler(req) {
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object;
                 const stripeCustomerId = subscription.customer;
-                console.log('[Stripe] Subscription cancelled:', subscription.id);
-
                 if (redis && stripeCustomerId) {
-                    // Look up uid from stripeCustomerId
                     const uid = await redis.get(`stripe:${stripeCustomerId}`);
                     if (uid) {
-                        // Revoke access
-                        await redis.del(`sub:${uid}`);
-
-                        // Update customer profile
+                        await dualWriteSubscription(uid, 'cancelled', redis);
                         const existing = await redis.get(`customer:${uid}`);
                         if (existing && typeof existing === 'object') {
                             existing.subscriptionStatus = 'cancelled';
                             existing.cancelledAt = new Date().toISOString();
-                            await redis.set(`customer:${uid}`, existing, { ex: CUSTOMER_TTL });
+                            await dualWriteProfile(uid, existing, redis);
                         }
-                        console.log(`[Stripe] Access revoked for uid: ${uid}`);
                     }
                 }
                 break;
@@ -195,38 +160,16 @@ export default async function handler(req) {
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object;
                 const stripeCustomerId = invoice.customer;
-
                 if (redis && stripeCustomerId) {
                     const uid = await redis.get(`stripe:${stripeCustomerId}`);
                     if (uid) {
-                        // Renew subscription on payment
-                        await redis.set(`sub:${uid}`, 'active', { ex: 32 * 24 * 60 * 60 });
-
+                        await dualWriteSubscription(uid, 'active', redis);
                         const existing = await redis.get(`customer:${uid}`);
                         if (existing && typeof existing === 'object') {
                             existing.lastPaymentAt = new Date().toISOString();
                             existing.subscriptionStatus = 'active';
-                            await redis.set(`customer:${uid}`, existing, { ex: CUSTOMER_TTL });
+                            await dualWriteProfile(uid, existing, redis);
                         }
-                        console.log(`[Stripe] Payment renewed for uid: ${uid}`);
-                    }
-                }
-                break;
-            }
-
-            case 'invoice.payment_failed': {
-                const invoice = event.data.object;
-                const stripeCustomerId = invoice.customer;
-
-                if (redis && stripeCustomerId) {
-                    const uid = await redis.get(`stripe:${stripeCustomerId}`);
-                    if (uid) {
-                        const existing = await redis.get(`customer:${uid}`);
-                        if (existing && typeof existing === 'object') {
-                            existing.subscriptionStatus = 'past_due';
-                            await redis.set(`customer:${uid}`, existing, { ex: CUSTOMER_TTL });
-                        }
-                        console.log(`[Stripe] Payment failed for uid: ${uid}`);
                     }
                 }
                 break;

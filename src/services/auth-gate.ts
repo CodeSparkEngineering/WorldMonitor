@@ -27,13 +27,22 @@ export function isAuthenticated(): boolean {
 
 export async function checkAuthentication(): Promise<boolean> {
     const path = window.location.pathname;
+    const hostname = window.location.hostname;
+
+    // Subdomain identification (Detect if user is on app. subdomain)
+    const isAppDomain = hostname.startsWith('app.') ||
+        (hostname.includes('vercel.app') && !hostname.startsWith('geonexus-monitor.vercel.app')) ||
+        (hostname === 'localhost' && path === '/dashboard'); // Local dev helper
+
     // Handle Vercel clean URLs and base path
-    const isLandingPage = path === '/' || path === '/index.html' ||
+    const isLandingPath = path === '/' || path === '/index.html' ||
         path.startsWith('/tech') || path.startsWith('/finance') ||
         path.startsWith('/financial');
-    const isDashboard = path === '/app' || path.startsWith('/app/') || path === '/dashboard' || path === '/app.html';
 
-    console.log(`[Auth] Checking path: ${path} (isLanding: ${isLandingPage}, isDashboard: ${isDashboard})`);
+    // A page is considered the Landing Page ONLY if it's a landing path AND NOT on the app subdomain
+    const isLandingPage = isLandingPath && !isAppDomain;
+
+    console.log(`[Auth] Checking path: ${path} on ${hostname} (isLanding: ${isLandingPage}, isAppDomain: ${isAppDomain})`);
 
     // Skip auth check on specific bypass pages
     if (path.includes('/success') || path.includes('/subscribe')) {
