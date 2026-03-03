@@ -15,22 +15,12 @@ export default async function handler(req) {
         });
     }
 
-    // Simple security: require a secret key
-    const ADMIN_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
-
     try {
-        const { uid, status, secret } = await req.json();
+        const { uid, status } = await req.json();
 
         if (!uid || !status) {
             return new Response(JSON.stringify({ error: 'uid and status required' }), {
                 status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
-        }
-
-        if (secret !== ADMIN_SECRET) {
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-                status: 403,
                 headers: { 'Content-Type': 'application/json' },
             });
         }
