@@ -1,7 +1,8 @@
 // Cancel Subscription API
-// Cancels a Stripe subscription for a user at end of billing period
+// Cancels a Stripe subscription at end of billing period
+// Uses Firestore only (no Redis)
 
-import { getRedis } from './_upstash-cache.js';
+import { getFirestoreDoc } from './_firestore-auth.js';
 
 export const config = {
     runtime: 'edge',
@@ -33,11 +34,10 @@ export default async function handler(req) {
             });
         }
 
-        // 1. Find subscriptionId from Firestore or Redis
+        // Find subscriptionId from Firestore
         let subscriptionId = null;
 
         try {
-            const { getFirestoreDoc } = await import('./_firestore.js');
             const customer = await getFirestoreDoc('customers', uid);
             if (customer?.subscriptionId) {
                 subscriptionId = customer.subscriptionId;
@@ -47,32 +47,20 @@ export default async function handler(req) {
         }
 
         if (!subscriptionId) {
-            const redis = await getRedis();
-            if (redis) {
-                const customer = await redis.get(`customer:${uid}`);
-                if (customer && typeof customer === 'object' && customer.subscriptionId) {
-                    subscriptionId = customer.subscriptionId;
-                }
-            }
-        }
-
-        if (!subscriptionId) {
             return new Response(JSON.stringify({ error: 'No active subscription found' }), {
                 status: 404,
                 headers: { 'Content-Type': 'application/json' },
             });
         }
 
-        // 2. Cancel the subscription at end of billing period via Stripe API
+        // Cancel at end of billing period via Stripe API
         const response = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({
-                'cancel_at_period_end': 'true',
-            }),
+            body: new URLSearchParams({ 'cancel_at_period_end': 'true' }),
         });
 
         if (!response.ok) {

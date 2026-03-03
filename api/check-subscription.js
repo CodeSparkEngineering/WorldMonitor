@@ -1,4 +1,7 @@
-import { getRedis } from './_upstash-cache.js';
+// Check Subscription Status
+// Reads subscription status from Firestore only (no Redis)
+
+import { getFirestoreDoc } from './_firestore-auth.js';
 
 export const config = {
     runtime: 'edge',
@@ -23,26 +26,16 @@ export default async function handler(req) {
             });
         }
 
-        const redis = await getRedis();
         let status = 'none';
 
         try {
-            // New Primary Source: Firestore REST
-            const { getFirestoreDoc } = await import('./_firestore.js');
             const doc = await getFirestoreDoc('subscriptions', uid);
             if (doc && doc.status) {
                 status = doc.status;
-                console.log(`[Auth] Firestore hit: ${uid} -> ${status}`);
-            } else if (redis) {
-                // Secondary Source: Upstash Redis (Legacy)
-                status = await redis.get(`sub:${uid}`);
-                console.log(`[Auth] Redis fallback: ${uid} -> ${status}`);
+                console.log(`[Auth] Firestore: ${uid} -> ${status}`);
             }
         } catch (dbError) {
-            console.error('[Auth] Database read failed:', dbError);
-            if (redis) {
-                status = await redis.get(`sub:${uid}`);
-            }
+            console.error('[Auth] Firestore read failed:', dbError);
         }
 
         return new Response(JSON.stringify({

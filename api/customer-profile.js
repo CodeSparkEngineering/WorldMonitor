@@ -1,15 +1,13 @@
-import { getRedis } from './_upstash-cache.js';
-import { dualWriteProfile } from './_firebase-admin.js';
+// Customer Profile API
+// Reads and writes customer profiles to Firestore only (no Redis)
+
+import { getFirestoreDoc, setFirestoreDoc } from './_firestore-auth.js';
 
 export const config = {
-    runtime: 'nodejs',
+    runtime: 'edge',
 };
 
-const CUSTOMER_TTL = 365 * 24 * 60 * 60; // 1 year
-
 export default async function handler(req) {
-    const redis = await getRedis();
-
     // GET: Retrieve customer profile
     if (req.method === 'GET') {
         const url = new URL(req.url);
@@ -23,19 +21,18 @@ export default async function handler(req) {
         }
 
         try {
-            // Priority: Firestore (REST for now, or Admin if we want to change)
-            const { getFirestoreDoc } = await import('./_firestore.js');
-            const firestoreProfile = await getFirestoreDoc('customers', uid);
+            const [profile, subDoc] = await Promise.all([
+                getFirestoreDoc('customers', uid),
+                getFirestoreDoc('subscriptions', uid),
+            ]);
 
-            const profile = firestoreProfile || (redis ? await redis.get(`customer:${uid}`) : null);
-            const subStatusDoc = await getFirestoreDoc('subscriptions', uid);
-            const subStatus = (subStatusDoc && subStatusDoc.status) || (redis ? await redis.get(`sub:${uid}`) : 'none');
+            const subStatus = (subDoc && subDoc.status) || 'none';
 
             return new Response(JSON.stringify({
                 profile: profile || null,
                 subscription: {
                     active: subStatus === 'active',
-                    status: subStatus || 'none',
+                    status: subStatus,
                 },
             }), {
                 status: 200,
@@ -63,11 +60,11 @@ export default async function handler(req) {
                 });
             }
 
-            const existing = redis ? await redis.get(`customer:${uid}`) : null;
+            const existing = await getFirestoreDoc('customers', uid);
             const now = new Date().toISOString();
 
             let profile;
-            if (existing && typeof existing === 'object') {
+            if (existing && typeof existing === 'object' && existing.uid) {
                 profile = {
                     ...existing,
                     email,
@@ -94,11 +91,7 @@ export default async function handler(req) {
                 };
             }
 
-            // Dual Write to Redis and Firestore
-            await Promise.all([
-                dualWriteProfile(uid, profile, redis),
-                redis ? redis.set(`email:${email}`, uid, { ex: CUSTOMER_TTL }) : Promise.resolve()
-            ]);
+            await setFirestoreDoc('customers', uid, profile);
 
             console.log(`[Customer] ${action === 'register' ? 'Registered' : 'Updated'}: ${email} (${uid})`);
 

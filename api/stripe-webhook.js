@@ -1,12 +1,12 @@
-import { getRedis } from './_upstash-cache.js';
+// Stripe Webhook Handler
+// Processes payment events and writes to Firestore only (no Redis)
+
 import { Resend } from 'resend';
-import { dualWriteSubscription, dualWriteProfile } from './_firebase-admin.js';
+import { getFirestoreDoc, setFirestoreDoc, queryFirestore } from './_firestore-auth.js';
 
 export const config = {
     runtime: 'nodejs',
 };
-
-const CUSTOMER_TTL = 365 * 24 * 60 * 60; // 1 year
 
 export default async function handler(req) {
     if (req.method !== 'POST') {
@@ -32,7 +32,6 @@ export default async function handler(req) {
         }
 
         const event = JSON.parse(body);
-        const redis = await getRedis();
 
         switch (event.type) {
             case 'checkout.session.completed': {
@@ -43,19 +42,22 @@ export default async function handler(req) {
                 const stripeCustomerId = session.customer;
                 const subscriptionId = session.subscription;
 
-                if (!uid && email && redis) {
-                    const emailKey = email.toLowerCase().trim();
-                    const foundUid = await redis.get(`email:${emailKey}`);
-                    if (foundUid) uid = foundUid;
+                // If no UID from client_reference_id, look up by email in Firestore
+                if (!uid && email) {
+                    const results = await queryFirestore('customers', 'email', 'EQUAL', email.toLowerCase().trim());
+                    if (results.length > 0) {
+                        uid = results[0].id;
+                    }
                 }
 
                 if (uid) {
                     console.log(`[Stripe] Granting access to: ${uid}`);
-
-                    const existing = redis ? await redis.get(`customer:${uid}`) : null;
                     const now = new Date().toISOString();
 
-                    const profile = (existing && typeof existing === 'object')
+                    // Read existing profile from Firestore
+                    const existing = await getFirestoreDoc('customers', uid);
+
+                    const profile = (existing && typeof existing === 'object' && existing.uid)
                         ? {
                             ...existing,
                             stripeCustomerId: stripeCustomerId || existing.stripeCustomerId,
@@ -84,13 +86,13 @@ export default async function handler(req) {
                             expiresAt: null,
                         };
 
-                    // Dual Write
+                    // Write to Firestore
                     await Promise.all([
-                        dualWriteSubscription(uid, 'active', redis),
-                        dualWriteProfile(uid, profile, redis),
-                        stripeCustomerId && redis ? redis.set(`stripe:${stripeCustomerId}`, uid, { ex: CUSTOMER_TTL }) : Promise.resolve()
+                        setFirestoreDoc('subscriptions', uid, { status: 'active' }),
+                        setFirestoreDoc('customers', uid, profile),
                     ]);
 
+                    // Send welcome email
                     if (resend && email) {
                         try {
                             await resend.emails.send({
@@ -112,6 +114,8 @@ export default async function handler(req) {
                             console.error('[Stripe] Email error:', emailErr.message);
                         }
                     }
+                } else {
+                    console.warn('[Stripe] checkout.session.completed: No UID found for', email);
                 }
                 break;
             }
@@ -120,19 +124,24 @@ export default async function handler(req) {
             case 'customer.subscription.updated': {
                 const subscription = event.data.object;
                 const stripeCustomerId = subscription.customer;
-                if (redis && stripeCustomerId) {
-                    const uid = await redis.get(`stripe:${stripeCustomerId}`);
-                    if (uid) {
+
+                if (stripeCustomerId) {
+                    // Find UID by stripeCustomerId in Firestore
+                    const results = await queryFirestore('customers', 'stripeCustomerId', 'EQUAL', stripeCustomerId);
+                    if (results.length > 0) {
+                        const uid = results[0].id;
                         const status = subscription.status;
                         const isActive = status === 'active' || status === 'trialing';
 
-                        await dualWriteSubscription(uid, isActive ? 'active' : status, redis);
+                        await setFirestoreDoc('subscriptions', uid, {
+                            status: isActive ? 'active' : status,
+                        });
 
-                        const existing = await redis.get(`customer:${uid}`);
+                        const existing = results[0].data;
                         if (existing && typeof existing === 'object') {
                             existing.subscriptionStatus = status;
                             existing.subscriptionId = subscription.id;
-                            await dualWriteProfile(uid, existing, redis);
+                            await setFirestoreDoc('customers', uid, existing);
                         }
                     }
                 }
@@ -142,15 +151,21 @@ export default async function handler(req) {
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object;
                 const stripeCustomerId = subscription.customer;
-                if (redis && stripeCustomerId) {
-                    const uid = await redis.get(`stripe:${stripeCustomerId}`);
-                    if (uid) {
-                        await dualWriteSubscription(uid, 'cancelled', redis);
-                        const existing = await redis.get(`customer:${uid}`);
+
+                if (stripeCustomerId) {
+                    const results = await queryFirestore('customers', 'stripeCustomerId', 'EQUAL', stripeCustomerId);
+                    if (results.length > 0) {
+                        const uid = results[0].id;
+
+                        await setFirestoreDoc('subscriptions', uid, {
+                            status: 'cancelled',
+                        });
+
+                        const existing = results[0].data;
                         if (existing && typeof existing === 'object') {
                             existing.subscriptionStatus = 'cancelled';
                             existing.cancelledAt = new Date().toISOString();
-                            await dualWriteProfile(uid, existing, redis);
+                            await setFirestoreDoc('customers', uid, existing);
                         }
                     }
                 }
@@ -160,15 +175,19 @@ export default async function handler(req) {
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object;
                 const stripeCustomerId = invoice.customer;
-                if (redis && stripeCustomerId) {
-                    const uid = await redis.get(`stripe:${stripeCustomerId}`);
-                    if (uid) {
-                        await dualWriteSubscription(uid, 'active', redis);
-                        const existing = await redis.get(`customer:${uid}`);
+
+                if (stripeCustomerId) {
+                    const results = await queryFirestore('customers', 'stripeCustomerId', 'EQUAL', stripeCustomerId);
+                    if (results.length > 0) {
+                        const uid = results[0].id;
+
+                        await setFirestoreDoc('subscriptions', uid, { status: 'active' });
+
+                        const existing = results[0].data;
                         if (existing && typeof existing === 'object') {
                             existing.lastPaymentAt = new Date().toISOString();
                             existing.subscriptionStatus = 'active';
-                            await dualWriteProfile(uid, existing, redis);
+                            await setFirestoreDoc('customers', uid, existing);
                         }
                     }
                 }
