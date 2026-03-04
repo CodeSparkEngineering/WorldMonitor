@@ -6,20 +6,19 @@ import { useLanguage } from '../i18n/LanguageContext';
 const SCREENSHOTS = [
     {
         src: '/screenshots/dashboard-map-v2.png',
-        title: 'Global Situation Awareness',
-        desc: 'Real-time tracking of conflicts, military assets, and critical infrastructure.'
+        title: 'Command Center',
+        desc: 'Full-spectrum situational awareness with live map, news feeds, camera streams, and threat indices.'
     },
     {
         src: '/screenshots/intel-modal-v2.png',
-        title: 'Deep Analysis',
-        desc: 'AI-generated insights and velocity spikes for emerging threats.'
+        title: 'AI Intelligence Analysis',
+        desc: 'AI-powered pattern detection with confidence scoring, velocity tracking, and actionable recommendations.'
     },
     {
         src: '/screenshots/language-menu-v2.png',
-        title: 'Multi-Language Support',
-        desc: 'Native support for 15+ languages including Arabic, Chinese, and Russian.'
+        title: 'Real-Time Threat Detection',
+        desc: 'Priority-ranked intelligence findings with instability indices and critical event monitoring.'
     }
-
 ];
 
 export default function Showcase() {
