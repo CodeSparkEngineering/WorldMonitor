@@ -61,6 +61,12 @@ const FULL_LIVE_CHANNELS: LiveChannel[] = [
   { id: 'france24', name: 'France24', handle: '@FRANCE24English', fallbackVideoId: 'Ap-UM1O9RBU' },
   { id: 'alarabiya', name: 'AlArabiya', handle: '@AlArabiya', fallbackVideoId: 'n7eQejkXbnM', useFallbackOnly: true },
   { id: 'aljazeera', name: 'AlJazeera', handle: '@AlJazeeraEnglish', fallbackVideoId: 'gCNeDWCI0vo', useFallbackOnly: true },
+  // Brazil Live News Channels
+  { id: 'cnnbrasil', name: 'CNN Brasil', handle: '@CNNBrasil', fallbackVideoId: '1z801G8pAEE' },
+  { id: 'jovempannews', name: 'Jovem Pan News', handle: '@jovempannews', fallbackVideoId: 'yv17QyA_b5M' },
+  { id: 'recordnews', name: 'Record News', handle: '@recordnews', fallbackVideoId: 'zT4VlQ0D4f4' },
+  { id: 'bandjornalismo', name: 'Band Jornalismo', handle: '@BandJornalismo', fallbackVideoId: 'pQ-4yA5YjWw' },
+  { id: 'sbtnews', name: 'SBT News', handle: '@sbtnews', fallbackVideoId: 'm4XJ-N6f_N0' },
 ];
 
 // Tech variant: Tech & business channels
@@ -69,6 +75,8 @@ const TECH_LIVE_CHANNELS: LiveChannel[] = [
   { id: 'yahoo', name: 'Yahoo Finance', handle: '@YahooFinance', fallbackVideoId: 'KQp-e_XQnDE' },
   { id: 'cnbc', name: 'CNBC', handle: '@CNBC', fallbackVideoId: '9NyxcX3rhQs' },
   { id: 'nasa', name: 'NASA TV', handle: '@NASA', fallbackVideoId: 'fO9e9jnhYK8', useFallbackOnly: true },
+  // Brazil Tech/Business
+  { id: 'infomoney', name: 'InfoMoney', handle: '@infomoney', fallbackVideoId: '4bQkxZz1_d0' },
 ];
 
 const LIVE_CHANNELS = SITE_VARIANT === 'tech' ? TECH_LIVE_CHANNELS : FULL_LIVE_CHANNELS;

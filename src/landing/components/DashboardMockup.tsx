@@ -25,7 +25,7 @@ export default function DashboardMockup() {
 
             {/* 2. Top Bar UI (Z-Index 30) */}
             <div className="absolute top-0 w-full h-8 bg-black/60 backdrop-blur-md border-b border-white/5 flex items-center px-4 justify-between z-30">
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5" data-ux-skip="true">
                     <div className="w-2 h-2 rounded-full bg-red-500/30" />
                     <div className="w-2 h-2 rounded-full bg-electric-500/30" />
                     <div className="w-2 h-2 rounded-full bg-green-500/30" />
@@ -47,6 +47,7 @@ export default function DashboardMockup() {
                 <motion.div
                     className="absolute top-12 left-6 p-2 border-l border-electric-500/10"
                     whileHover={{ x: 10, y: 10 }}
+                    data-ux-skip="true"
                 >
                     <div className="text-[8px] font-mono text-zinc-500 uppercase">Input_Source</div>
                     <div className="text-[10px] font-mono text-electric-500/60 font-bold">LIVE_SAT_FEED</div>
