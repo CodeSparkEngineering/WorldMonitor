@@ -4,6 +4,9 @@
   "version": "2.4.1",
   "license": "AGPL-3.0-only",
   "type": "module",
+  "engines": {
+    "node": ">=20.x"
+  },
   "scripts": {
     "lint:md": "markdownlint-cli2 '**/*.md'",
     "version:sync": "node scripts/sync-desktop-version.mjs",

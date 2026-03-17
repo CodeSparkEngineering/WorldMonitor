@@ -138,5 +138,6 @@
       "destination": "/index"
     }
   ],
-  "cleanUrls": true
+  "cleanUrls": true,
+  "trailingSlash": false
 }
