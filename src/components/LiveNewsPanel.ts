@@ -1,6 +1,7 @@
 import { Panel } from './Panel';
 import { fetchLiveVideoId } from '@/services/live-news';
 import { isDesktopRuntime, getRemoteApiBaseUrl } from '@/services/runtime';
+import { SITE_VARIANT } from '@/config';
 import { t } from '../services/i18n';
 
 // YouTube IFrame Player API types
@@ -49,7 +50,6 @@ interface LiveChannel {
   useFallbackOnly?: boolean; // Skip auto-detection, always use fallback
 }
 
-const SITE_VARIANT = import.meta.env.VITE_VARIANT || 'full';
 
 // Full variant: World news channels (24/7 live streams)
 const FULL_LIVE_CHANNELS: LiveChannel[] = [
