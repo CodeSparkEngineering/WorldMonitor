@@ -1223,7 +1223,8 @@ canvas,
 /* Live News Panel */
 .live-news-switcher {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 3px;
   padding: 6px 8px;
   background: var(--darken-heavy);
   border-bottom: 1px solid var(--border);
@@ -1231,12 +1232,12 @@ canvas,
 }
 
 .live-channel-btn {
-  padding: 4px 8px;
+  padding: 3px 6px;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-dim);
   font-family: inherit;
-  font-size: 10px;
+  font-size: 9px;
   cursor: pointer;
   transition: all 0.2s;
   text-transform: uppercase;
